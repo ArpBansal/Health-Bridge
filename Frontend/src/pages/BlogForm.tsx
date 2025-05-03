@@ -20,7 +20,7 @@ interface Post {
   comments: Comment[];
 }
 
-const API_URL = 'http://localhost:8000';
+const API_URL = 'https://health-bridge-mtzy.onrender.com';
 
 const BlogForm = () => {
   const { id } = useParams<{ id: string }>();

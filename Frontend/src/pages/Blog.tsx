@@ -33,7 +33,7 @@ interface Comment {
   created_at: string;
 }
 
-const API_URL = 'http://localhost:8000';
+const API_URL = 'https://health-bridge-mtzy.onrender.com';
 
 const Blog = () => {
   const { t } = useLanguage();

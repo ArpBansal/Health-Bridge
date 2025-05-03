@@ -24,7 +24,12 @@ const Hero = () => {
 
   // Handle Get Started click
   const handleGetStarted = () => {
-    setShowLoginPrompt(true);
+    const isLoggedIn = localStorage.getItem('accessToken');
+    if (isLoggedIn) {
+      navigate('/chat', { replace: true });
+    } else {
+      setShowLoginPrompt(true);
+    }
   };
 
   // Features data
@@ -263,10 +268,10 @@ const Hero = () => {
                 </div>
                 
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Welcome to HealthBridge!
+                  Login Required
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Please log in to your account to access our services and start your healthcare journey.
+                  Please log in to your account to chat with our AI assistant.
                 </p>
                 
                 <div className="flex flex-col gap-3">

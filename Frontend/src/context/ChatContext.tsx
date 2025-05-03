@@ -39,7 +39,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     setIsLoading(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/ai/chats/', {
+      const response = await fetch('https://health-bridge-mtzy.onrender.com/ai/chats/', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         }
@@ -68,7 +68,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     setIsLoading(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/ai/chats/', {
+      const response = await fetch('https://health-bridge-mtzy.onrender.com/ai/chats/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -101,7 +101,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setConnecting(true);
     
     // Connect to WebSocket with the proper format
-    const ws = new WebSocket(`ws://127.0.0.1:8000/ws/chat/${chatId}/`);
+    const ws = new WebSocket(`wss://health-bridge-mtzy.onrender.com/ws/chat/${chatId}/?token=${encodeURIComponent(localStorage.getItem('accessToken'))}`)
     
     ws.onopen = () => {
       console.log('WebSocket connected');
@@ -159,7 +159,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       // Send message to API using the new endpoint format
-      const response = await fetch(`http://127.0.0.1:8000/ai/chat/${activeChat.id}/messages/`, {
+      const response = await fetch(`https://health-bridge-mtzy.onrender.com/ai/chat/${activeChat.id}/messages/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

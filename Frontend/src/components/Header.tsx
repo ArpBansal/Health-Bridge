@@ -60,7 +60,6 @@ const Header = () => {
     { path: "/contact", label: 'contact' },
     { path: "/health-assessment", label: 'Health Assessment' },
     { path: "/chat", label: 'Chat' }
-
   ];
 
   const isActivePath = (path: string) => {
@@ -71,198 +70,194 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 bg-white/90 backdrop-blur-sm shadow-sm z-40">
-      <div className="container flex items-center justify-between h-16 px-4 md:px-6">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-healthbridge-blue to-healthbridge-teal flex items-center justify-center text-white font-bold shadow-md">
-            HB
-          </div>
-          <span className="font-display text-2xl font-bold text-healthbridge-dark hidden md:block tracking-tight">
-            HealthBridge
-          </span>
-        </Link>
-
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
-          {navLinks.map((link) => (
-            <Link
-              key={link.path}
-              to={link.path}
-              className={cn(
-                "relative py-2 text-healthbridge-dark transition-colors group",
-                isActivePath(link.path) ? "text-healthbridge-blue" : "hover:text-healthbridge-blue"
-              )}
-            >
-              {t(link.label)}
-              <div
-                className={cn(
-                  "absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-healthbridge-blue to-healthbridge-teal transform origin-left transition-transform duration-300",
-                  isActivePath(link.path) ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
-                )}
-              />
+    <header className="sticky top-0 bg-white/95 backdrop-blur-sm border-b z-40">
+      <div className="container mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          <div className="flex items-center">
+            <Link to="/" className="flex items-center gap-1.5">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-healthbridge-blue to-healthbridge-teal flex items-center justify-center text-white font-bold shadow-sm">
+                HB
+              </div>
+              <span className="font-display text-lg sm:text-xl md:text-2xl font-bold text-healthbridge-dark tracking-tight">
+                HealthBridge
+              </span>
             </Link>
-          ))}
-        </nav>
+          </div>
 
-        <div className="hidden md:flex items-center gap-4">
-          <LanguageSelector />
-          {isAuthenticated ? (
-            <>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 px-2 hover:bg-healthbridge-blue/10 focus:bg-healthbridge-blue/10 text-healthbridge-dark">
-                    <UserIcon className="h-5 w-5 text-healthbridge-blue" />
-                    <span className="font-semibold text-healthbridge-dark">
-                      {user?.username || "Account"}
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-72">
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col gap-1">
-                      <span className="font-bold text-lg text-healthbridge-blue">{user?.username}</span>
-                      <span className="text-xs text-gray-500">{user?.email || "No email on file"}</span>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <div className="px-3 py-2">
-                    <div className="font-semibold text-sm mb-1 text-gray-700">Dashboard</div>
-                    <div className="flex flex-col gap-1 text-xs text-gray-600">
-                      <div>• Total Logins: <span className="font-bold">1</span></div>
-                      <div>• Last Login: <span className="font-bold">Just now</span></div>
-                      <div>• Recent Activity: <span className="font-bold">AI Chat, Schemes</span></div>
-                    </div>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/account-dashboard')} className="font-semibold flex items-center gap-2 hover:bg-healthbridge-blue/10 focus:bg-healthbridge-blue/10 hover:text-healthbridge-blue focus:text-healthbridge-blue">
-                    <UserIcon className="h-4 w-4" /> Account Dashboard
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 font-semibold flex items-center gap-2 hover:bg-healthbridge-blue/10 focus:bg-healthbridge-blue/10">
-                    <LogOut className="h-4 w-4" /> Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button 
-                onClick={handleLogout}
-                variant="outline" 
-                size="sm"
-                className="flex items-center gap-2 border-healthbridge-blue text-healthbridge-blue hover:bg-healthbridge-blue/10 focus:bg-healthbridge-blue/10"
-              >
-                <LogOut size={16} />
-                {t('Logout')}
-              </Button>
-              <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Log out?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to log out of your HealthBridge account?
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel onClick={cancelLogout}>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={confirmLogout}>Log out</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </>
-          ) : (
-            <>
-              <Link to="/login">
-                <Button variant="outline" size="sm">
-                  {t('Login')}
-                </Button>
-              </Link>
-              <Link to="/login" state={{ activeTab: "signup" }}>
-                <Button className="bg-healthbridge-blue hover:bg-healthbridge-teal" size="sm">
-                  {t('Signup')}
-                </Button>
-              </Link>
-            </>
-          )}
-        </div>
-
-        {/* Mobile Menu Button */}
-        <div className="flex items-center gap-4 md:hidden">
-          <LanguageSelector />
-          <Button variant="ghost" size="icon" onClick={toggleMenu}>
-            {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      {isOpen && (
-        <div className="md:hidden bg-white border-t">
-          <nav className="flex flex-col p-4 space-y-3">
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center space-x-6">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
                 className={cn(
-                  "px-4 py-2 rounded-md relative overflow-hidden group",
-                  isActivePath(link.path) 
-                    ? "bg-blue-50 text-healthbridge-blue" 
-                    : "hover:bg-gray-50"
+                  "relative py-2 text-sm font-medium text-gray-600 transition-all duration-200 group",
+                  isActivePath(link.path) ? "text-healthbridge-blue" : "hover:text-healthbridge-blue"
                 )}
-                onClick={() => setIsOpen(false)}
               >
-                <span className="relative z-10">{t(link.label)}</span>
+                {t(link.label)}
                 <div
                   className={cn(
-                    "absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-healthbridge-blue to-healthbridge-teal w-full transform origin-left transition-transform duration-300",
+                    "absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-healthbridge-blue to-healthbridge-teal transform origin-left transition-all duration-300",
                     isActivePath(link.path) ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
                   )}
                 />
               </Link>
             ))}
-            <div className="flex flex-col gap-2 pt-2 border-t">
-              {isAuthenticated ? (
-                <>
-                  <Button 
-                    onClick={() => {
-                      handleLogout();
-                      setIsOpen(false);
-                    }} 
-                    variant="outline" 
-                    className="w-full flex items-center justify-center gap-2"
-                  >
-                    <LogOut size={16} />
-                    {t('logout')}
-                  </Button>
-                  <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Log out?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to log out of your HealthBridge account?
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel onClick={cancelLogout}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmLogout}>Log out</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </>
-              ) : (
-                <>
-                  <Link to="/login" className="w-full" onClick={() => setIsOpen(false)}>
-                    <Button variant="outline" className="w-full">
-                      {t('login')}
-                    </Button>
-                  </Link>
-                  <Link to="/login" state={{ activeTab: "signup" }} className="w-full" onClick={() => setIsOpen(false)}>
-                    <Button className="w-full bg-healthbridge-blue hover:bg-healthbridge-teal">
-                      {t('signup')}
-                    </Button>
-                  </Link>
-                </>
-              )}
-            </div>
           </nav>
+
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="hidden lg:block">
+              <LanguageSelector />
+            </div>
+            
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center gap-1.5 px-2 hover:bg-healthbridge-blue/5 focus:bg-healthbridge-blue/5 text-healthbridge-dark h-8 sm:h-9 transition-colors duration-200">
+                      <UserIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-healthbridge-blue" />
+                      <span className="font-medium text-healthbridge-dark hidden sm:inline">
+                        {user?.username || "Account"}
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-72">
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col gap-1">
+                        <span className="font-semibold text-healthbridge-blue">{user?.username}</span>
+                        <span className="text-xs text-gray-500">{user?.email || "No email on file"}</span>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <div className="px-3 py-2">
+                      <div className="font-medium text-sm mb-1 text-gray-700">Dashboard</div>
+                      <div className="flex flex-col gap-1 text-xs text-gray-600">
+                        <div>• Total Logins: <span className="font-medium">1</span></div>
+                        <div>• Last Login: <span className="font-medium">Just now</span></div>
+                        <div>• Recent Activity: <span className="font-medium">AI Chat, Schemes</span></div>
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate('/account-dashboard')} className="font-medium flex items-center gap-2 hover:bg-healthbridge-blue/5 focus:bg-healthbridge-blue/5 transition-colors duration-200">
+                      <UserIcon className="h-4 w-4" /> Account Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout} className="text-red-600 font-medium flex items-center gap-2 hover:bg-red-50 focus:bg-red-50 transition-colors duration-200">
+                      <LogOut className="h-4 w-4" /> Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button 
+                  onClick={handleLogout}
+                  variant="outline" 
+                  size="sm"
+                  className="hidden lg:flex items-center gap-2 border-healthbridge-blue text-healthbridge-blue hover:bg-healthbridge-blue/5 focus:bg-healthbridge-blue/5 h-9 transition-colors duration-200"
+                >
+                  <LogOut size={16} />
+                  <span className="hidden sm:inline">{t('Logout')}</span>
+                </Button>
+              </div>
+            ) : (
+              <div className="hidden lg:flex items-center space-x-2">
+                <Link to="/login">
+                  <Button variant="outline" size="sm" className="h-9 transition-colors duration-200">
+                    {t('Login')}
+                  </Button>
+                </Link>
+                <Link to="/login" state={{ activeTab: "signup" }}>
+                  <Button className="bg-healthbridge-blue hover:bg-healthbridge-teal h-9 transition-colors duration-200" size="sm">
+                    {t('Signup')}
+                  </Button>
+                </Link>
+              </div>
+            )}
+
+            {/* Mobile Menu Button */}
+            <div className="flex items-center lg:hidden">
+              <LanguageSelector />
+              <Button variant="ghost" size="icon" onClick={toggleMenu} className="ml-1.5 h-8 sm:h-9 transition-colors duration-200">
+                {isOpen ? <X className="h-4 w-4 sm:h-5 sm:w-5" /> : <Menu className="h-4 w-4 sm:h-5 sm:w-5" />}
+              </Button>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
+
+      {/* Mobile Menu */}
+      <div className={cn(
+        "lg:hidden bg-white border-t transition-all duration-300 ease-in-out",
+        isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"
+      )}>
+        <nav className="flex flex-col p-3 sm:p-4 space-y-2 sm:space-y-3">
+          {navLinks.map((link) => (
+            <Link
+              key={link.path}
+              to={link.path}
+              className={cn(
+                "px-3 sm:px-4 py-1.5 sm:py-2 rounded-md relative overflow-hidden group transition-all duration-200",
+                isActivePath(link.path) 
+                  ? "bg-blue-50 text-healthbridge-blue" 
+                  : "hover:bg-gray-50"
+              )}
+              onClick={() => setIsOpen(false)}
+            >
+              <span className="relative z-10 text-sm">{t(link.label)}</span>
+              <div
+                className={cn(
+                  "absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-healthbridge-blue to-healthbridge-teal w-full transform origin-left transition-all duration-300",
+                  isActivePath(link.path) ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                )}
+              />
+            </Link>
+          ))}
+          <div className="flex flex-col gap-2 pt-2 border-t">
+            {isAuthenticated ? (
+              <>
+                <Button 
+                  onClick={() => {
+                    handleLogout();
+                    setIsOpen(false);
+                  }} 
+                  variant="outline" 
+                  className="w-full flex items-center justify-center gap-2 transition-colors duration-200"
+                >
+                  <LogOut size={16} />
+                  {t('logout')}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="w-full" onClick={() => setIsOpen(false)}>
+                  <Button variant="outline" className="w-full transition-colors duration-200">
+                    {t('login')}
+                  </Button>
+                </Link>
+                <Link to="/login" state={{ activeTab: "signup" }} className="w-full" onClick={() => setIsOpen(false)}>
+                  <Button className="w-full bg-healthbridge-blue hover:bg-healthbridge-teal transition-colors duration-200">
+                    {t('signup')}
+                  </Button>
+                </Link>
+              </>
+            )}
+          </div>
+        </nav>
+      </div>
+
+      {/* Logout Dialog */}
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Log out?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to log out of your HealthBridge account?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelLogout}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmLogout}>Log out</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </header>
   );
 };

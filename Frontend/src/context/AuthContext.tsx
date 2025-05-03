@@ -64,7 +64,7 @@ interface ResetPasswordData {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 // Base API URL
-const API_BASE_URL = 'http://127.0.0.1:8000';
+const API_BASE_URL = 'https://health-bridge-mtzy.onrender.com';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();

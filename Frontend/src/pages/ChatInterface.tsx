@@ -97,7 +97,7 @@ const ChatInterface: React.FC = () => {
   const fetchChats = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/ai/chats/', {
+      const response = await fetch('https://health-bridge-mtzy.onrender.com/ai/chats/', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         }
@@ -123,7 +123,7 @@ const ChatInterface: React.FC = () => {
 
   const fetchChatMessages = async (chatId: string) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/ai/chat/${chatId}/messages/`, {
+      const response = await fetch(`https://health-bridge-mtzy.onrender.com/ai/chat/${chatId}/messages/`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
@@ -153,7 +153,7 @@ const ChatInterface: React.FC = () => {
   const createNewChat = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/ai/chats/', {
+      const response = await fetch('https://health-bridge-mtzy.onrender.com/ai/chats/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -194,7 +194,7 @@ const ChatInterface: React.FC = () => {
     // Connect to WebSocket with the correct URL format
     const token = localStorage.getItem('accessToken');
     console.log('Connecting with token:', token);
-    const ws = new WebSocket(`ws://localhost:8000/ws/chat/${chatId}/?token=${encodeURIComponent(token || '')}`);
+    const ws = new WebSocket(`wss://health-bridge-mtzy.onrender.com/ws/chat/${chatId}/?token=${encodeURIComponent(token || '')}`);
     
     ws.onopen = () => {
       console.log('WebSocket connected to chat:', chatId);
