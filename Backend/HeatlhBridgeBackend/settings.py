@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     'ckeditor',
     'users',
     'healthform',
+    'organisation',
+    'drf_yasg',
     'blogs',
     'rest_framework',
     'rest_framework_simplejwt',
@@ -95,13 +97,28 @@ CKEDITOR_UPLOAD_PATH = "uploads/"
 ASGI_APPLICATION = 'HeatlhBridgeBackend.asgi.application'
 
 
+SWAGGER_SETTINGS = {
+    # disable session auth if you only want JWT
+    'USE_SESSION_AUTH': False,
+
+    # define the “Bearer” header
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': "JWT Authorization header. Example: 'Bearer <your-token-here>'",
+        }
+    },
+}
+
 from datetime import timedelta
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    # "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 

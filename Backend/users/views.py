@@ -34,6 +34,7 @@ class UserDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
+        print(self.request.user)
         return self.request.user
 
 
@@ -46,6 +47,8 @@ class RegistrationView(APIView):
         if serializer.is_valid():
             username = serializer.validated_data['username']
             email = serializer.validated_data['email']
+            role = serializer.validated_data['role']  # Get role from validated data
+
 
             if CustomUser.objects.filter(email=email).exists():
                 return Response({'error': 'Email already exists'}, status=status.HTTP_400_BAD_REQUEST)
@@ -77,6 +80,7 @@ class RegistrationView(APIView):
                 username=serializer.validated_data['username'],
                 email=email,
                 password=make_password(serializer.validated_data['password']),
+                role=role,
                 is_active=False  # User remains inactive until OTP verification
             )
 
