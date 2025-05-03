@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogOut, User as UserIcon } from "lucide-react";
@@ -8,7 +8,6 @@ import { useAuth } from "@/context/AuthContext"; // Import Auth context
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
-  AlertDialogTrigger,
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogFooter,
@@ -32,7 +31,34 @@ const Header = () => {
   const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, logout, user} = useAuth(); // Get authentication state and logout function
+  const { isAuthenticated, logout, user, checkAuth } = useAuth();
+  
+  // Flag to prevent repeated API calls
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    // Only check auth once and only if we're authenticated
+    if (isAuthenticated && !authChecked) {
+      const fetchUserData = async () => {
+        try {
+          await checkAuth();
+        } catch (error) {
+          console.error("Error checking authentication:", error);
+        } finally {
+          setAuthChecked(true);
+        }
+      };
+      
+      fetchUserData();
+    }
+  }, [isAuthenticated, authChecked]); // Only depends on these two values
+  
+  // Reset authChecked when authentication state changes
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setAuthChecked(false);
+    }
+  }, [isAuthenticated]);
 
   const toggleMenu = () => setIsOpen(!isOpen);
   
@@ -51,16 +77,24 @@ const Header = () => {
     setShowLogoutDialog(false);
   };
 
+  // Check if user is an organization - safely handle potential undefined values
+  const isOrganization = user?.role === "organisation" || user?.role === "organization";
+  
+  // Define navigation links with visibility conditions
   const navLinks = [
-    { path: "/", label: 'home' },
-    { path: "/schemes", label: 'schemes' },
-    { path: "/research", label: 'research' },
-    { path: "/blog", label: 'blog' },
-    { path: "/about", label: 'about' },
-    { path: "/contact", label: 'contact' },
-    { path: "/health-assessment", label: 'Health Assessment' },
-    { path: "/chat", label: 'Chat' }
+    { path: "/", label: 'home', visible: true },
+    { path: "/schemes", label: 'schemes', visible: !isAuthenticated || (isAuthenticated && !isOrganization) },
+    { path: "/research", label: 'research', visible: true },
+    { path: "/blog", label: 'blog', visible: true },
+    { path: "/about", label: 'about', visible: true },
+    { path: "/contact", label: 'contact', visible: true },
+    { path: "/health-assessment", label: 'Health Assessment', visible: !isAuthenticated || (isAuthenticated && !isOrganization) },
+    { path: "/chat", label: 'Chat', visible: true },
+    { path: "/organization-dashboard", label: 'Organization Dashboard', visible: isAuthenticated && isOrganization }
   ];
+
+  // Filter visible links
+  const visibleNavLinks = navLinks.filter(link => link.visible);
 
   const isActivePath = (path: string) => {
     if (path === "/" && location.pathname !== "/") {
@@ -86,7 +120,7 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-6">
-            {navLinks.map((link) => (
+            {visibleNavLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
@@ -119,14 +153,19 @@ const Header = () => {
                       <UserIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-healthbridge-blue" />
                       <span className="font-medium text-healthbridge-dark hidden sm:inline">
                         {user?.username || "Account"}
+                        {isOrganization && <span className="ml-1 text-xs text-gray-500">(Org)</span>}
                       </span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-72">
                     <DropdownMenuLabel>
                       <div className="flex flex-col gap-1">
-                        <span className="font-semibold text-healthbridge-blue">{user?.username}</span>
+                        <span className="font-semibold text-healthbridge-blue">
+                          {user?.username || "User"}
+                          {isOrganization && <span className="ml-1 text-xs text-gray-500">(Organization)</span>}
+                        </span>
                         <span className="text-xs text-gray-500">{user?.email || "No email on file"}</span>
+                        {user?.role && <span className="text-xs text-gray-500">Role: {user.role}</span>}
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
@@ -135,12 +174,18 @@ const Header = () => {
                       <div className="flex flex-col gap-1 text-xs text-gray-600">
                         <div>• Total Logins: <span className="font-medium">1</span></div>
                         <div>• Last Login: <span className="font-medium">Just now</span></div>
-                        <div>• Recent Activity: <span className="font-medium">AI Chat, Schemes</span></div>
+                        <div>• Recent Activity: <span className="font-medium">
+                          {isOrganization ? 'Organization Dashboard' : 'AI Chat, Schemes'}
+                        </span></div>
                       </div>
                     </div>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate('/account-dashboard')} className="font-medium flex items-center gap-2 hover:bg-healthbridge-blue/5 focus:bg-healthbridge-blue/5 transition-colors duration-200">
-                      <UserIcon className="h-4 w-4" /> Account Dashboard
+                    <DropdownMenuItem 
+                      onClick={() => navigate(isOrganization ? '/organization-dashboard' : '/account-dashboard')} 
+                      className="font-medium flex items-center gap-2 hover:bg-healthbridge-blue/5 focus:bg-healthbridge-blue/5 transition-colors duration-200"
+                    >
+                      <UserIcon className="h-4 w-4" /> 
+                      {isOrganization ? 'Organization Dashboard' : 'Account Dashboard'}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleLogout} className="text-red-600 font-medium flex items-center gap-2 hover:bg-red-50 focus:bg-red-50 transition-colors duration-200">
                       <LogOut className="h-4 w-4" /> Logout
@@ -189,7 +234,7 @@ const Header = () => {
         isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"
       )}>
         <nav className="flex flex-col p-3 sm:p-4 space-y-2 sm:space-y-3">
-          {navLinks.map((link) => (
+          {visibleNavLinks.map((link) => (
             <Link
               key={link.path}
               to={link.path}

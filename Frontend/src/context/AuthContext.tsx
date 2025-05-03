@@ -7,6 +7,7 @@ interface User {
   id: string;
   username: string;
   email: string;
+  role: string; // Add role field to User interface
 }
 
 interface AuthContextType {
@@ -53,6 +54,7 @@ interface SignupData {
   password: string;
   confirmPassword: string;
   agreeTerms: boolean;
+  role: string; // Add role field to SignupData
 }
 
 interface ResetPasswordData {
@@ -112,6 +114,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [countdown, resendDisabled]);
 
   // Function to verify token validity and refresh if needed
+  // Replace the checkAuth function in AuthContext.tsx with this improved version
+
+
   const checkAuth = async (): Promise<boolean> => {
     const accessToken = localStorage.getItem('accessToken');
     const refreshToken = localStorage.getItem('refreshToken');
@@ -122,63 +127,100 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       return false;
     }
-
+  
     try {
+      // Attempt to get user data with current access token
       const userResponse = await axios.get(`${API_BASE_URL}/auth/user/`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`
         }
       });
   
-      const userData = userResponse.data;
-      setUser(userData);
-      localStorage.setItem('userData', JSON.stringify(userData));
-      setIsAuthenticated(true);
-      return true;
-  
-    } catch (error: any) {
-      console.warn("Access token may be expired, attempting refresh...");
-  
+      // Extract user data and ensure role is properly set
+      if (userResponse.data) {
+        const userData = {
+          id: userResponse.data.id,
+          username: userResponse.data.username,
+          email: userResponse.data.email,
+          role: userResponse.data.role // Don't use || null here, just take the value directly
+        };
+        console.log(userData)
+        
+        // Update user state and localStorage
+        setUser(userData);
+        localStorage.setItem('userData', JSON.stringify(userData));
+        setIsAuthenticated(true);
+        return true;
+      }
       
-      // If token verification failed, try to refresh the token
-      try {
-        const refreshResponse = await axios.post(
-          `${API_BASE_URL}/auth/refresh/`,
-          { refresh: refreshToken },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${accessToken}`
+      return isAuthenticated;
+    } catch (error) {
+      // Only try token refresh if we get a specific error (e.g., 401)
+      const status = error.response?.status;
+      
+      if (status === 401) {
+        try {
+          // Attempt to refresh the token
+          const refreshResponse = await axios.post(
+            `${API_BASE_URL}/auth/refresh/`,
+            { refresh: refreshToken },
+            {
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          
+          // If refresh successful, update tokens
+          if (refreshResponse.data.access) {
+            localStorage.setItem('accessToken', refreshResponse.data.access);
+            
+            if (refreshResponse.data.refresh) {
+              localStorage.setItem('refreshToken', refreshResponse.data.refresh);
+            }
+            
+            // With new access token, try to get user data again
+            try {
+              const newUserResponse = await axios.get(`${API_BASE_URL}/auth/user/`, {
+                headers: {
+                  'Authorization': `Bearer ${refreshResponse.data.access}`
+                }
+              });
+              
+              if (newUserResponse.data) {
+                const userData = {
+                  id: newUserResponse.data.id,
+                  username: newUserResponse.data.username,
+                  email: newUserResponse.data.email,
+                  role: newUserResponse.data.role || 'user' // Fix the same issue here too
+                };
+                
+                setUser(userData);
+                localStorage.setItem('userData', JSON.stringify(userData));
+                setIsAuthenticated(true);
+                return true;
+              }
+            } catch (userError) {
+              console.error('Failed to get user data after token refresh:', userError);
             }
           }
-        );
-        
-        // If refresh successful, update tokens and set authenticated
-        if (refreshResponse.data.access) {
-          localStorage.setItem('accessToken', refreshResponse.data.access);
-          if (refreshResponse.data.refresh) {
-            localStorage.setItem('refreshToken', refreshResponse.data.refresh);
-          }
-          
-          // If we have a user in the response, update the user state
-          if (refreshResponse.data.user) {
-            setUser(refreshResponse.data.user);
-            localStorage.setItem('userData', JSON.stringify(refreshResponse.data.user));
-          }
-          
-          setIsAuthenticated(true);
-          return true;
+        } catch (refreshError) {
+          console.error('Token refresh failed:', refreshError);
+          // If refresh fails, log the user out
+          logout();
+          return false;
         }
-      } catch (refreshError) {
-        console.error('Token refresh failed, logging out...', refreshError);
-        // If refresh failed, logout
-        logout();
-        return false;
+      } else {
+        // For other error types, just log the error
+        console.error('Error checking authentication:', error);
       }
     }
     
+    // Return current authenticated state
     return isAuthenticated;
   };
+
+
 
   // Function to start the countdown timer
   const startResendTimer = () => {
@@ -205,7 +247,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     // Handle field-specific errors
-    if (data.username || data.email || data.password || data.non_field_errors) {
+    if (data.username || data.email || data.password || data.non_field_errors || data.role) {
       const fieldErrors = [];
       
       if (Array.isArray(data.username)) {
@@ -218,6 +260,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (Array.isArray(data.password)) {
         fieldErrors.push(`Password: ${data.password.join(', ')}`);
+      }
+      
+      if (Array.isArray(data.role)) {
+        fieldErrors.push(`Role: ${data.role.join(', ')}`);
       }
       
       if (Array.isArray(data.non_field_errors)) {
@@ -351,6 +397,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: signupData.email,
           password: signupData.password,
           confirm_password: signupData.confirmPassword,
+          role: signupData.role, // Add role field to API request
         },
         {
           headers: {

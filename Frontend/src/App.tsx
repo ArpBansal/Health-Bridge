@@ -22,6 +22,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ChatInterface from "./pages/ChatInterface"; // Import ChatInterface component
 import AccountDashboard from "./pages/AccountDashboard";
 import HealthAssessment from "./pages/HealthAssessment";
+import OrganizationDashboard from "./pages/OrganizationDashboard";
+import ServerTrainingPage from "./pages/ServerTrainingPage";
 
 import { AnimatePresence } from "framer-motion";
 
@@ -56,6 +58,8 @@ const App = () => (
 
                 <Route path="/account-dashboard" element={<AccountDashboard />} />
                 <Route path="/health-assessment" element={<HealthAssessment />} />
+                <Route path="/organization-dashboard" element={<OrganizationDashboard />} />
+                <Route path="/server-training" element={<ServerTrainingPage />} />
 
                 {/* Chat system route - wrapped in ChatProvider */}
                 <Route 
