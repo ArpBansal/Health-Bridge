@@ -1,15 +1,22 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 import asyncio
-import requests
-import google.generativeai as genai
-from django.contrib.auth.models import AnonymousUser
-from urllib.parse import parse_qs
-from chat.websocket.services import get_chat_if_user_matches, get_previous_messages, create_message, update_message_response, get_user
-from rest_framework_simplejwt.tokens import AccessToken
 import uuid
 import datetime
+from urllib.parse import parse_qs
+import httpx  # ✅ For async HTTP requests
+import google.generativeai as genai
+from django.contrib.auth.models import AnonymousUser
+from rest_framework_simplejwt.tokens import AccessToken
 
+from chat.websocket.services import (
+    get_chat_if_user_matches,
+    get_previous_messages,
+    create_message,
+    update_message_response,
+    get_user,
+    get_user_data
+)
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -28,16 +35,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.close(code=4003)  # Custom close code for unauthorized access
             return
 
-        # Accept the connection
         await self.accept()
 
-        # Send connection success message
         await self.send(json.dumps({
             "type": "connection_established",
             "chat_id": self.chat_id
         }))
 
-        # Send previous messages if they exist
         previous_messages = await get_previous_messages(self.chat_id)
         if previous_messages:
             await self.send(json.dumps({
@@ -45,16 +49,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 "messages": previous_messages,
             }))
 
-
     async def disconnect(self, code):
         print(f"WebSocket disconnected with code: {code}")
         pass
 
-
     async def receive(self, text_data):
         try:
             data = json.loads(text_data)
-            user_message = data.get("content", "")  
+            user_message = data.get("content", "")
 
             if not user_message:
                 await self.send(json.dumps({
@@ -63,11 +65,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }))
                 return
 
-            # Create the user message record
-            
+            # Create the user message
             message = await create_message(self.chat_id, self.user, user_message)
-            
-            # Send confirmation that user message was received
+
+            # Notify user message sent
             await self.send(json.dumps({
                 "type": "message",
                 "message": {
@@ -79,23 +80,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }
             }))
 
-            # Generate and stream the AI response
+            # Prepare assistant message
             response_text = ""
             assistant_message_id = str(uuid.uuid4())
-            
-            # Send an initial message to show the assistant is typing
+
             await self.send(json.dumps({
                 "type": "message",
                 "message": {
                     "id": assistant_message_id,
-                    "content": "",  # Empty content initially
+                    "content": "",
                     "role": "assistant",
                     "timestamp": datetime.datetime.now().isoformat(),
                     "chatId": self.chat_id
                 }
             }))
-            
-            async for chunk in stream_gemini_response(user_message):
+
+            user_data = await get_user_data(self.user)
+            previous_messages = await get_previous_messages(self.chat_id)
+
+            async for chunk in call_retrieve_api(previous_messages, user_message, user_data):
                 response_text += chunk
                 await self.send(json.dumps({
                     "type": "message_update",
@@ -103,10 +106,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "content": response_text,
                 }))
 
-            # Update the message in the database
-            ai_message = await update_message_response(message, response_text)
-            
-            # Send the final complete message
+            # Update the response on the original message (or create a new one if needed)
+            await update_message_response(message, response_text)
+
+            # Final response confirmation
             await self.send(json.dumps({
                 "type": "message",
                 "message": {
@@ -117,7 +120,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "chatId": self.chat_id
                 }
             }))
-            
+
         except json.JSONDecodeError:
             await self.send(json.dumps({
                 "type": "error",
@@ -131,53 +134,53 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }))
 
     async def authenticate_user(self):
-        """Authenticate user using JWT token from WebSocket query params."""
         query_params = parse_qs(self.scope["query_string"].decode())
         token = query_params.get("token", [None])[0]
-        
+
         if not token:
             print("No token provided in query parameters")
             return AnonymousUser()
-            
+
         try:
-            # Verify and decode the token
             access_token = AccessToken(token)
             user_id = access_token["user_id"]
             user = await get_user(user_id)
-            
             if not user:
                 print(f"User with ID {user_id} not found")
                 return AnonymousUser()
-                
             return user
         except Exception as e:
             print(f"Token authentication error: {str(e)}")
             return AnonymousUser()
 
 
-async def stream_gemini_response(user_message):
-    model = genai.GenerativeModel("gemini-1.5-flash")
-    response = model.generate_content(user_message, stream=True)
+# async def stream_gemini_response(user_message):
+#     model = genai.GenerativeModel("gemini-1.5-flash")
+#     response = model.generate_content(user_message, stream=True)
+#     for chunk in await asyncio.to_thread(list, response):
+#         yield chunk.text
 
-    # Run the sync generator in a thread and yield asynchronously
-    for chunk in await asyncio.to_thread(list, response):
-        yield chunk.text
 
-async def call_retrieve_api(self, previous_messages, user_message, user_data):
-        url = "https://arpit-bansal-healthbridge.hf.space/retrieve"
-        payload = {
-            "previous_state": previous_messages,
-            "query": user_message,
-            "user_data": user_data
-        }
-        print("Final Payload Sent:", json.dumps(payload, indent=2))
-        
-        headers = {"Content-Type": "application/json"}
-        try:
-            response = requests.post(url, json=payload, headers=headers)
+async def call_retrieve_api(previous_messages, user_message, user_data):
+    url = "https://arpit-bansal-healthbridge.hf.space/retrieve"
+    payload = {
+        "previous_state": previous_messages,
+        "query": user_message,
+        "user_data": user_data
+    }
+
+    print("Final Payload Sent:", json.dumps(payload, indent=2))
+    headers = {"Content-Type": "application/json"}
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=payload, headers=headers)
             response_data = response.json()
-            print(response_data)
-            return response_data.get("response", "I'm sorry, but I couldn't process your request.")
-        except requests.exceptions.RequestException as e:
-            print(f"Error calling AI retrieval API: {e}")
-            return "I'm facing technical issues. Please try again later."
+            result = response_data.get("response", "")
+
+            # ✅ Yield the response like a stream
+            for chunk in result.split():  # simulate streaming chunk-by-chunk
+                yield chunk + " "  # preserve spacing
+    except httpx.RequestError as e:
+        print(f"Error calling AI retrieval API: {e}")
+        yield "I'm facing technical issues. Please try again later."

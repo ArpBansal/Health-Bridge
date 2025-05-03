@@ -5,6 +5,16 @@ from channels.db import database_sync_to_async
 User = get_user_model()
 
 @database_sync_to_async
+def get_user_data(user):
+    from healthform.models import GeneralHealthForm
+    try:
+        form = GeneralHealthForm.objects.get(user=user)
+        return {"state": form.state, "gender": form.gender, "style":"concise"}
+    except GeneralHealthForm.DoesNotExist:
+        return None
+
+
+@database_sync_to_async
 def get_user(user_id):
     try:
         return User.objects.get(id=user_id)

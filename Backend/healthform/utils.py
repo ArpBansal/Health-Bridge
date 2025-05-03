@@ -47,6 +47,7 @@ def generate_health_prompt(data):
     Pregnancy Status: {data.pregnancy_status}
 
     Please provide a compassionate and easy-to-understand summary of their current health along with 3 general suggestions.
+     - Don't use Markdown format.
     """
     return prompt
 
