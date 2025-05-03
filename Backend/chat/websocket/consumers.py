@@ -1,6 +1,7 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 import asyncio
+import requests
 import google.generativeai as genai
 from django.contrib.auth.models import AnonymousUser
 from urllib.parse import parse_qs
@@ -161,3 +162,22 @@ async def stream_gemini_response(user_message):
     # Run the sync generator in a thread and yield asynchronously
     for chunk in await asyncio.to_thread(list, response):
         yield chunk.text
+
+async def call_retrieve_api(self, previous_messages, user_message, user_data):
+        url = "https://arpit-bansal-healthbridge.hf.space/retrieve"
+        payload = {
+            "previous_state": previous_messages,
+            "query": user_message,
+            "user_data": user_data
+        }
+        print("Final Payload Sent:", json.dumps(payload, indent=2))
+        
+        headers = {"Content-Type": "application/json"}
+        try:
+            response = requests.post(url, json=payload, headers=headers)
+            response_data = response.json()
+            print(response_data)
+            return response_data.get("response", "I'm sorry, but I couldn't process your request.")
+        except requests.exceptions.RequestException as e:
+            print(f"Error calling AI retrieval API: {e}")
+            return "I'm facing technical issues. Please try again later."
