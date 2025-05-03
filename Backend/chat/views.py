@@ -47,5 +47,18 @@ class ChatMessagesView(APIView):
         return Response(serializer.errors, status=400)
 
 
+class ChatDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, chat_id):
+        try:
+            chat = Chat.objects.get(id=chat_id, user=request.user)
+        except Chat.DoesNotExist:
+            return Response({"detail": "Chat not found."}, status=404)
+
+        chat.delete()
+        return Response({"detail": "Chat deleted successfully."}, status=204)
+
+
 
 

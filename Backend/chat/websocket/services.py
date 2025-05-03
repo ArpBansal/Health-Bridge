@@ -9,9 +9,13 @@ def get_user_data(user):
     from healthform.models import GeneralHealthForm
     try:
         form = GeneralHealthForm.objects.get(user=user)
-        return {"state": form.state, "gender": form.gender, "style":"concise"}
+        return {
+            "state": getattr(form, "state", None),
+            "gender": getattr(form, "gender", None),
+            "style": "concise",
+        }
     except GeneralHealthForm.DoesNotExist:
-        return None
+        return {"state": None, "gender": None, "style": "concise"}
 
 
 @database_sync_to_async
