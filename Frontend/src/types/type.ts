@@ -12,6 +12,7 @@ export interface User {
     role: 'user' | 'assistant';
     timestamp: string;
     chatId: string;
+    isOptimistic?: boolean;
   }
   
   export interface Chat {
@@ -25,13 +26,15 @@ export interface User {
   export enum WebSocketMessageType {
     MESSAGE = 'message',
     TYPING = 'typing',
-    SYSTEM = 'system'
+    SYSTEM = 'system',
+    ERROR='error'
   }
   
   export interface WebSocketMessage {
     type: WebSocketMessageType;
     message?: ChatMessage;
     data?: any;
+    error?: string;
   }
   
   export interface ChatContextType {
@@ -40,8 +43,12 @@ export interface User {
     isLoading: boolean;
     connected: boolean;
     connecting: boolean;
+    error: string | null;
     fetchChats: () => Promise<void>;
     createNewChat: () => Promise<void>;
     selectChat: (chat: Chat) => void;
     sendMessage: (content: string) => Promise<void>;
+    updateChatTitle: (chatId: string, newTitle: string) => void; // Added this line
+    deleteChat: (chatId: string) => void; // Added deleteChat method
+
   }

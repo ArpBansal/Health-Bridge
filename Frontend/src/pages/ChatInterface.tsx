@@ -15,7 +15,12 @@ import {
   Bot,
   Sparkles,
   Clock,
-  ArrowRight
+  ArrowRight,
+  Trash2,
+  MoreVertical,
+  Settings,
+  HelpCircle,
+  Info
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from '@/context/AuthContext';
@@ -50,6 +55,8 @@ const ChatInterface: React.FC = () => {
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [deletingChat, setDeletingChat] = useState(false);
   
   // Enhanced animation states
   const [isThinking, setIsThinking] = useState(false);  // AI is processing but not yet streaming
@@ -129,7 +136,7 @@ const ChatInterface: React.FC = () => {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch chat messages');
       }
@@ -147,6 +154,38 @@ const ChatInterface: React.FC = () => {
       });
     } catch (error) {
       console.error('Error fetching chat messages:', error);
+    }
+  };
+
+  const deleteChat = async (chatId: string) => {
+    try {
+      setDeletingChat(true);
+      const response = await fetch(`https://health-bridge-mtzy.onrender.com/ai/chat/${chatId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete chat');
+      }
+
+      // Remove the deleted chat from the state
+      setChats(prevChats => prevChats.filter(chat => chat.id !== chatId));
+      
+      if (activeChat?.id === chatId) {
+        // Set the first available chat as active, or null if none available
+        const remainingChats = chats.filter(chat => chat.id !== chatId);
+        setActiveChat(remainingChats.length > 0 ? remainingChats[0] : null);
+      }
+      
+      // Clear the confirmation dialog
+      setShowDeleteConfirm(null);
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+    } finally {
+      setDeletingChat(false);
     }
   };
 
@@ -194,7 +233,7 @@ const ChatInterface: React.FC = () => {
     // Connect to WebSocket with the correct URL format
     const token = localStorage.getItem('accessToken');
     console.log('Connecting with token:', token);
-    const ws = new WebSocket(`wss://health-bridge-mtzy.onrender.com/ws/chat/${chatId}/?token=${encodeURIComponent(token || '')}`);
+    const ws = new WebSocket(`wss://health-bridge-mtzy.onrender.com/ws/chat/${chatId}/?token=${encodeURIComponent(token)}`);
     
     ws.onopen = () => {
       console.log('WebSocket connected to chat:', chatId);
@@ -444,11 +483,23 @@ const ChatInterface: React.FC = () => {
   const handleChatSelect = useCallback((chat: Chat) => {
     if (chat.id !== activeChat?.id) {
       setActiveChat(chat);
+      // Hide any active delete confirmation
+      setShowDeleteConfirm(null);
     }
   }, [activeChat?.id]);
 
   // Get chat title (since your model doesn't have a title field)
   const getChatTitle = (chat: Chat): string => {
+    // Try to get the first message content for a better title
+    if (chat.messages && chat.messages.length > 0) {
+      const firstMessage = chat.messages[0].content;
+      if (firstMessage) {
+        // Use first ~20 chars of the first message as title
+        return firstMessage.length > 20 
+          ? `${firstMessage.substring(0, 20)}...` 
+          : firstMessage;
+      }
+    }
     return `Chat ${formatDate(chat.created_at)}`;
   };
 
@@ -517,6 +568,36 @@ const ChatInterface: React.FC = () => {
     );
   };
 
+  // Render delete confirmation dialog
+  const renderDeleteConfirmation = (chatId: string) => {
+    return (
+      <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-lg p-4 flex flex-col items-center justify-center space-y-4 border border-red-200 z-10">
+        <AlertCircle size={24} className="text-red-500" />
+        <p className="text-sm font-medium text-slate-800 text-center">Delete this conversation?</p>
+        <p className="text-xs text-slate-500 text-center">This action cannot be undone</p>
+        <div className="flex space-x-3">
+          <Button 
+            onClick={() => setShowDeleteConfirm(null)} 
+            className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm px-3 py-1 h-8"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={() => deleteChat(chatId)} 
+            className="bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-1 h-8"
+            disabled={deletingChat}
+          >
+            {deletingChat ? (
+              <><Loader2 size={14} className="mr-2 animate-spin" /> Deleting...</>
+            ) : (
+              <>Delete</>
+            )}
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex h-screen bg-slate-50">
       {/* Sidebar */}
@@ -566,11 +647,11 @@ const ChatInterface: React.FC = () => {
           ) : (
             <ul className="space-y-2 p-3">
               {chats.map(chat => (
-                <li key={chat.id}>
+                <li key={chat.id} className="relative">
                   <button
                     onClick={() => handleChatSelect(chat)}
                     className={cn(
-                      "w-full text-left p-3 rounded-lg flex items-center",
+                      "w-full text-left p-3 rounded-lg flex items-center group",
                       activeChat?.id === chat.id 
                         ? "bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200" 
                         : "hover:bg-slate-100"
@@ -586,17 +667,37 @@ const ChatInterface: React.FC = () => {
                       )} 
                     />
                     {isOpen && (
-                      <div className="flex-1 overflow-hidden">
-                        <div className="font-medium text-sm truncate">
-                          {getChatTitle(chat)}
+                      <>
+                        <div className="flex-1 overflow-hidden">
+                          <div className="font-medium text-sm truncate">
+                            {getChatTitle(chat)}
+                          </div>
+                          <div className="text-xs text-slate-500 truncate mt-1 flex items-center">
+                            <Clock size={12} className="mr-1" />
+                            {formatDate(chat.created_at)}
+                          </div>
                         </div>
-                        <div className="text-xs text-slate-500 truncate mt-1 flex items-center">
-                          <Clock size={12} className="mr-1" />
-                          {formatDate(chat.created_at)}
-                        </div>
-                      </div>
+                        
+                        {/* Delete button that appears on hover */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDeleteConfirm(chat.id);
+                          }}
+                          className={cn(
+                            "p-1.5 rounded-full text-slate-400 hover:bg-red-50 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-red-200",
+                            activeChat?.id === chat.id ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                          )}
+                          aria-label="Delete conversation"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </>
                     )}
                   </button>
+                  
+                  {/* Delete confirmation overlay */}
+                  {showDeleteConfirm === chat.id && renderDeleteConfirmation(chat.id)}
                 </li>
               ))}
             </ul>
@@ -639,154 +740,181 @@ const ChatInterface: React.FC = () => {
       <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden">
         {/* Add Header component here */}
         <Header />
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden">
-        {/* Chat Header - Removed duplicate menu button */}
-        <div className="bg-white border-b border-slate-200 p-4 flex items-center shadow-sm">
-          <div className="h-10 w-10 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm mr-3">
-            <Bot size={20} />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold text-slate-800">
-              HealthBridge AI Assistant
-            </h1>
-            <div className="flex items-center text-sm text-slate-500">
-              <div className={cn(
-                "w-2 h-2 rounded-full mr-2",
-                connected ? "bg-green-500" : 
-                connectionError ? "bg-red-500" : "bg-amber-500"
-              )}></div>
-              {connecting ? 'Connecting...' : (connected ? 'Online' : 'Offline')}
-              
-              {connectionError && (
-                <div className="ml-2 px-2 py-1 bg-red-50 text-red-600 text-xs rounded-full flex items-center">
-                  <AlertCircle size={12} className="mr-1" />
-                  {connectionError}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
         
-        {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-4xl mx-auto w-full">
-          {activeChat ? (
-            activeChat.messages && activeChat.messages.length > 0 ? (
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden">
+          {/* Chat Header with enhanced UI and action buttons */}
+          <div className="bg-white border-b border-slate-200 p-4 flex items-center justify-between shadow-sm">
+            <div className="flex items-center">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm mr-3">
+                <Bot size={20} />
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold text-slate-800">
+                  HealthBridge AI Assistant
+                </h1>
+                <div className="flex items-center text-sm text-slate-500">
+                  <div className={cn(
+                    "w-2 h-2 rounded-full mr-2",
+                    connected ? "bg-green-500" : 
+                    connectionError ? "bg-red-500" : "bg-amber-500"
+                  )}></div>
+                  {connecting ? 'Connecting...' : (connected ? 'Online' : 'Offline')}
+                  
+                  {connectionError && (
+                    <div className="ml-2 px-2 py-1 bg-red-50 text-red-600 text-xs rounded-full flex items-center">
+                      <AlertCircle size={12} className="mr-1" />
+                      {connectionError}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* Action buttons */}
+            {activeChat && (
+              <div className="flex space-x-2">
+                <Button 
+                  onClick={() => setShowDeleteConfirm(activeChat.id)}
+                  className="bg-white hover:bg-red-50 border border-slate-200 text-slate-700 hover:text-red-600 h-9 px-3"
+                  title="Delete conversation"
+                >
+                  <Trash2 size={16} className="mr-1.5" />
+                  Delete
+                </Button>
+                <Button
+                  className="bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 h-9 w-9 p-0"
+                  title="Help"
+                >
+                  <HelpCircle size={16} />
+                </Button>
+              </div>
+            )}
+          </div>
+          
+          {/* Messages Container */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {activeChat ? (
               <>
-                {activeChat.messages.map(renderMessageWithResponse)}
-                
-                {/* Thinking indicator - shown when isThinking is true */}
-                {renderThinkingIndicator()}
-                
-                {/* Show thinking indicator for the latest message if no response yet */}
-                {activeChat.messages.length > 0 && 
-                 !activeChat.messages[activeChat.messages.length - 1].response &&
-                 !isThinking && (
-                  <div className="flex justify-start mt-4">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white flex items-center justify-center flex-shrink-0 mr-3 shadow-md">
-                      <Bot size={18} />
+                {/* Welcome message when chat is empty */}
+                {activeChat.messages?.length === 0 && (
+                  <div className="flex flex-col items-center justify-center h-full -mt-20">
+                    <div className="h-20 w-20 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white flex items-center justify-center mb-6 shadow-lg">
+                      <Sparkles size={32} />
                     </div>
-                    <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm max-w-[80%]">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 rounded-full bg-teal-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-2 h-2 rounded-full bg-teal-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                        <div className="w-2 h-2 rounded-full bg-teal-400 animate-bounce" style={{ animationDelay: '600ms' }}></div>
-                      </div>
+                    <h2 className="text-2xl font-bold text-slate-800 mb-3">Welcome to HealthBridge AI</h2>
+                    <p className="text-slate-500 text-center max-w-md mb-6">
+                      I'm your personal healthcare assistant. Ask me any health-related questions or concerns you might have.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
+                      {[
+                        {
+                          title: "Daily Health Tips",
+                          description: "How can I improve my overall health?",
+                          icon: <Info />
+                        },
+                        {
+                          title: "Symptom Assessment",
+                          description: "I've been experiencing [symptom]. What could it be?",
+                          icon: <AlertCircle />
+                        },
+                        {
+                          title: "Medication Questions",
+                          description: "Can you explain how [medication] works?",
+                          icon: <Shield />
+                        },
+                        {
+                          title: "Lifestyle Advice",
+                          description: "What diet changes can help with [condition]?",
+                          icon: <Settings />
+                        }
+                      ].map((suggestion, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setMessage(suggestion.description)}
+                          className="bg-white border border-slate-200 p-4 rounded-xl hover:shadow-md transition-all flex items-start space-x-3 text-left"
+                        >
+                          <div className="text-teal-500 mt-0.5">
+                            {suggestion.icon}
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-slate-800 mb-1">{suggestion.title}</h3>
+                            <p className="text-sm text-slate-500">{suggestion.description}</p>
+                          </div>
+                        </button>
+                      ))}
                     </div>
+                  </div>
+                )}
+                
+                {/* Messages list */}
+                {activeChat.messages?.length > 0 && (
+                  <div className="space-y-6">
+                    {activeChat.messages.map((msg) => renderMessageWithResponse(msg))}
+                    {/* Thinking animation */}
+                    {renderThinkingIndicator()}
+                    <div ref={messagesEndRef} />
                   </div>
                 )}
               </>
             ) : (
-              <div className="text-center py-16 flex flex-col items-center justify-center">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 flex items-center justify-center mb-6 shadow-lg">
-                  <Sparkles className="h-10 w-10 text-white" />
+              // No active chat state
+              <div className="flex flex-col items-center justify-center h-full">
+                <div className="h-16 w-16 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center mb-4">
+                  <MessageSquare size={24} />
                 </div>
-                <h3 className="text-2xl font-medium text-slate-800 mb-3">Welcome to HealthBridge AI</h3>
-                <p className="text-slate-500 max-w-md mb-6">
-                  Your personal healthcare assistant. Ask anything about healthcare, your medical conditions, or get general health advice.
+                <h2 className="text-xl font-semibold text-slate-700 mb-2">No Conversation Selected</h2>
+                <p className="text-slate-500 mb-6">
+                  Start a new conversation or select an existing one
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md w-full">
-                  <Button 
-                    className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-sm px-4 py-3 h-auto flex items-center justify-center"
-                    onClick={() => {
-                      setMessage("What can you help me with?");
-                      setTimeout(() => {
-                        handleSendMessage(new Event('submit') as any);
-                      }, 100);
-                    }}
-                  >
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">What can you help me with?</span>
-                      <span className="text-xs text-slate-500">Get started with basic info</span>
-                    </div>
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                  <Button 
-                    className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-sm px-4 py-3 h-auto flex items-center justify-center"
-                    onClick={() => {
-                      setMessage("Tell me about healthy eating habits");
-                      setTimeout(() => {
-                        handleSendMessage(new Event('submit') as any);
-                      }, 100);
-                    }}
-                  >
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">Healthy eating habits</span>
-                      <span className="text-xs text-slate-500">Get nutrition advice</span>
-                    </div>
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
+                <Button
+                  onClick={createNewChat}
+                  disabled={isLoading}
+                  className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white flex items-center justify-center gap-2 shadow-md"
+                >
+                  <PlusCircle size={18} />
+                  <span>New Conversation</span>
+                </Button>
               </div>
-            )
-          ) : (
-            <div className="text-center py-16 flex flex-col items-center justify-center">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-r from-slate-300 to-slate-400 flex items-center justify-center mb-6">
-                <MessageSquare className="h-10 w-10 text-white" />
-              </div>
-              <h3 className="text-xl font-medium text-slate-800 mb-2">No active conversation</h3>
-              <p className="text-slate-500 mt-2 max-w-md mb-6">
-                Create a new conversation or select an existing one to start chatting with HealthBridge AI.
-              </p>
-              <Button
-                onClick={createNewChat}
-                className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-6 py-2 shadow-md"
-              >
-                <PlusCircle size={18} className="mr-2" />
-                Start New Conversation
-              </Button>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-        
-        {activeChat && (
-          <div className="bg-white border-t border-slate-200 p-4 px-6">
-            <form onSubmit={handleSendMessage} className="flex space-x-3 max-w-4xl mx-auto">
+            )}
+          </div>
+          
+          {/* Input Area */}
+          <div className="p-4 border-t border-slate-200 bg-white">
+            <form onSubmit={handleSendMessage} className="flex space-x-4">
               <input
                 ref={inputRef}
                 type="text"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Type your message..."
-                className="flex-1 border border-slate-300 rounded-full py-3 px-5 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent shadow-sm"
-                disabled={!connected || isThinking}
+                disabled={!connected || !activeChat}
+                placeholder={connected ? "Type your message..." : "Connecting..."}
+                className="flex-1 p-3 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent disabled:bg-slate-100 disabled:text-slate-400"
               />
-              <Button 
-                type="submit" 
-                disabled={!connected || !message.trim() || isThinking}
-                className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white rounded-full px-6 shadow-md"
+              <Button
+                type="submit"
+                disabled={!message.trim() || !connected || !activeChat}
+                className={cn(
+                  "bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white px-5",
+                  (!message.trim() || !connected || !activeChat) && "opacity-70 cursor-not-allowed"
+                )}
               >
-                <Send size={18} />
+                {isThinking || isStreaming ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Send className="h-5 w-5" />
+                )}
               </Button>
             </form>
-            <div className="text-center mt-2 text-xs text-slate-400">
-              HealthBridge AI is designed to provide general information, not medical advice. Always consult with healthcare professionals.
+            
+            {/* Footer with branding and attribution */}
+            <div className="flex items-center justify-center mt-4 text-xs text-slate-400">
+              <Shield size={12} className="mr-1.5" />
+              HealthBridge AI Assistant &copy; {new Date().getFullYear()}
             </div>
           </div>
-        )}
+        </div>
       </div>
-    </div>
     </div>
   );
 };
