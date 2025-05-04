@@ -1,3 +1,7 @@
+This repo contains code fom huggingface space https://huggingface.co/spaces/Arpit-Bansal/EmbeddingGenerator-Medical/tree/main
+
+It's deployed on HF-space.
+
 ---
 title: EmbeddingGenerator Medical
 emoji: 📉
