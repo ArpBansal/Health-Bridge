@@ -36,8 +36,8 @@ POST http://127.0.0.1:8000/auth/login/
 Content-Type: application/json
 
 {
-    "username": "user1",
-    "password": "ayush@1234"
+    "username": "arpit",
+    "password": "arpit@123"
 }
 
 ###
@@ -192,7 +192,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiY
 
 GET http://127.0.0.1:8000/healthcare/generate-pdf/
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0OTc1ODMwLCJpYXQiOjE3NDQ4ODk0MzAsImp0aSI6ImIyZWY2MmU5ZWI3YTQ0ZGE5ZTkwNDUxMmM5NzA2ZDM1IiwidXNlcl9pZCI6M30.2hIrZETn4H_Mzry5csjJ9nnXanAAaj_hhOUXaFhtI8k
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ2NDI0NDY1LCJpYXQiOjE3NDYzMzgwNjUsImp0aSI6IjIyMTBmYjJmOTFiZDQ3MDk4M2ZhMjQxYTU3NWJhN2RiIiwidXNlcl9pZCI6MTV9.0HCa4mSqgplue1T4ZTcQJN8VmyewToPp0OLuQazVOlU
 
 ###
 
