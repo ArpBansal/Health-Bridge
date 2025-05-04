@@ -25,7 +25,10 @@ import {
   Loader2,
   AlertTriangle,
   CheckCircle,
-  XCircle
+  XCircle,
+  X,
+  Stethoscope,
+  ActivityIcon
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -71,6 +74,12 @@ const OrganizationDashboard = () => {
   const [showResultModal, setShowResultModal] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [serverStatus, setServerStatus] = useState<"checking" | "online" | "offline">("checking");
+  const [showChestXRayModal, setShowChestXRayModal] = useState(false);
+  const [showDermModal, setShowDermModal] = useState(false);
+  const [chestXRayImage, setChestXRayImage] = useState<string | null>(null);
+  const [dermImage, setDermImage] = useState<string | null>(null);
+  const [isChestXRayUploading, setIsChestXRayUploading] = useState(false);
+  const [isDermUploading, setIsDermUploading] = useState(false);
 
   // Add health check function
   const checkServerHealth = useCallback(async () => {
@@ -390,58 +399,130 @@ const OrganizationDashboard = () => {
     input.click();
   }, [handleFileUpload]);
 
+  const handleChestXRayUpload = useCallback(async (e: Event) => {
+    const target = e.target as HTMLInputElement;
+    const files = target.files;
+    
+    if (files && files.length > 0) {
+      const confirmUpload = window.confirm(`You have selected ${files.length} image(s). Proceed with upload?`);
+      
+      if (confirmUpload) {
+        setIsChestXRayUploading(true);
+        
+        try {
+          const file = files[0];
+          setChestXRayImage(URL.createObjectURL(file));
+          
+          // Here you would typically send the image to your API
+          // For now, we'll just simulate a delay
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          setShowChestXRayModal(true);
+        } catch (error) {
+          console.error('Upload error:', error);
+        } finally {
+          setIsChestXRayUploading(false);
+        }
+      }
+    }
+  }, []);
+
+  const handleDermUpload = useCallback(async (e: Event) => {
+    const target = e.target as HTMLInputElement;
+    const files = target.files;
+    
+    if (files && files.length > 0) {
+      const confirmUpload = window.confirm(`You have selected ${files.length} image(s). Proceed with upload?`);
+      
+      if (confirmUpload) {
+        setIsDermUploading(true);
+        
+        try {
+          const file = files[0];
+          setDermImage(URL.createObjectURL(file));
+          
+          // Here you would typically send the image to your API
+          // For now, we'll just simulate a delay
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          setShowDermModal(true);
+        } catch (error) {
+          console.error('Upload error:', error);
+        } finally {
+          setIsDermUploading(false);
+        }
+      }
+    }
+  }, []);
+
+  const handleChestXRayUploadClick = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.jpg,.jpeg,.png,.webp,.tiff,.tif';
+    input.multiple = false;
+    input.addEventListener('change', handleChestXRayUpload);
+    input.click();
+  }, [handleChestXRayUpload]);
+
+  const handleDermUploadClick = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.jpg,.jpeg,.png,.webp,.tiff,.tif';
+    input.multiple = false;
+    input.addEventListener('change', handleDermUpload);
+    input.click();
+  }, [handleDermUpload]);
+
   const ResultModal = useMemo(() => {
     if (!diagnosisResult) return null;
     
-    // Get prediction and confidence from the new result format
     const { prediction, confidence } = diagnosisResult;
     const confidencePercentage = (confidence * 100).toFixed(2);
     const isPredictionPositive = prediction === "positive";
     
     return (
       <Dialog open={showResultModal} onOpenChange={setShowResultModal}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Cancer Detection Results</DialogTitle>
-            <DialogDescription>
-              Analysis results from the cancer detection model
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-6 mt-4">
-            {/* Image preview */}
-            {uploadedImage && (
-              <div className="flex justify-center">
-                <div className="relative w-64 h-64 rounded-lg overflow-hidden border-2 border-gray-200">
+        <DialogContent className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-2xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Left Column - Image and Primary Result */}
+            <div className="space-y-6">
+              {/* Image Preview */}
+              {uploadedImage && (
+                <div className="relative aspect-square rounded-xl overflow-hidden border-2 border-gray-200">
                   <img 
                     src={uploadedImage} 
                     alt="Analyzed image" 
                     className="w-full h-full object-cover"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                    <div className="text-white">
+                      <h3 className="text-lg font-semibold">Analyzed Medical Image</h3>
+                      <p className="text-sm opacity-90">AI-powered analysis completed</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
-            
-            {/* Primary result card */}
-            <Card className={`hover:shadow-md transition-all duration-300 border-l-4 ${
-              isPredictionPositive ? 'border-l-red-500' : 'border-l-green-500'
-            }`}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-full ${
+              )}
+
+              {/* Primary Result */}
+              <Card className={`border-l-4 ${
+                isPredictionPositive ? 'border-l-red-500' : 'border-l-green-500'
+              }`}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full ${
                       isPredictionPositive ? 'bg-red-50' : 'bg-green-50'
                     }`}>
                       {isPredictionPositive ? (
-                        <AlertTriangle className="h-8 w-8 text-red-500" />
+                        <AlertTriangle className="h-6 w-6 text-red-500" />
                       ) : (
-                        <CheckCircle className="h-8 w-8 text-green-500" />
+                        <CheckCircle className="h-6 w-6 text-green-500" />
                       )}
                     </div>
                     <div>
-                      <h3 className="text-xl font-semibold">
+                      <h3 className="text-lg font-semibold">
                         {isPredictionPositive ? 'Positive Indicators Detected' : 'No Indicators Detected'}
                       </h3>
-                      <p className="text-gray-600">
+                      <p className="text-sm text-gray-600">
                         {isPredictionPositive 
                           ? 'The model detected indicators that require further analysis'
                           : 'No concerning indicators were found in the image'
@@ -449,88 +530,98 @@ const OrganizationDashboard = () => {
                       </p>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Detailed results */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="hover:shadow-md transition-all duration-300">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Prediction</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-2">
-                    {isPredictionPositive ? (
-                      <XCircle className="h-5 w-5 text-red-500" />
-                    ) : (
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                    )}
-                    <span className={`font-medium text-lg ${
-                      isPredictionPositive ? 'text-red-600' : 'text-green-600'
-                    }`}>
-                      {prediction.charAt(0).toUpperCase() + prediction.slice(1)}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="hover:shadow-md transition-all duration-300">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Confidence</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-lg">{confidencePercentage}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div 
-                        className={`h-2.5 rounded-full ${
-                          isPredictionPositive ? 'bg-red-500' : 'bg-green-500'
-                        }`}
-                        style={{ width: `${confidencePercentage}%` }}
-                      ></div>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
             </div>
-            
-            {/* Recommendations */}
-            <Card className="hover:shadow-md transition-all duration-300">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Recommendations</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700">
-                  {isPredictionPositive
-                    ? 'Based on our analysis, we recommend consulting with a healthcare professional for a comprehensive evaluation.'
-                    : 'No concerning indicators were detected. Continue with regular check-ups as recommended by your healthcare provider.'
-                  }
-                </p>
-              </CardContent>
-            </Card>
-            
-            <div className="flex justify-end gap-3">
-              <Button 
-                variant="outline"
-                onClick={() => {
-                  setShowResultModal(false);
-                  if (uploadedImage) {
-                    URL.revokeObjectURL(uploadedImage);
-                    setUploadedImage(null);
-                  }
-                }}
-              >
-                Close
-              </Button>
-              <Button 
-                className="bg-blue-500 hover:bg-blue-600 text-white"
-                onClick={handleImageUploadClick}
-              >
-                Analyze Another Image
-              </Button>
+
+            {/* Right Column - Details and Actions */}
+            <div className="space-y-6">
+              <DialogHeader className="text-left">
+                <DialogTitle className="text-xl">Analysis Results</DialogTitle>
+                <DialogDescription className="text-gray-600">
+                  Detailed findings from our cancer detection model
+                </DialogDescription>
+              </DialogHeader>
+
+              {/* Detailed Results */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-semibold">Prediction</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-2">
+                      {isPredictionPositive ? (
+                        <XCircle className="h-4 w-4 text-red-500" />
+                      ) : (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      )}
+                      <span className={`font-medium ${
+                        isPredictionPositive ? 'text-red-600' : 'text-green-600'
+                      }`}>
+                        {prediction.charAt(0).toUpperCase() + prediction.slice(1)}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-semibold">Confidence</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">{confidencePercentage}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full ${
+                            isPredictionPositive ? 'bg-red-500' : 'bg-green-500'
+                          }`}
+                          style={{ width: `${confidencePercentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-semibold">Recommendations</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-700">
+                      {isPredictionPositive
+                        ? 'Based on our analysis, we recommend consulting with a healthcare professional for a comprehensive evaluation.'
+                        : 'No concerning indicators were detected. Continue with regular check-ups as recommended by your healthcare provider.'
+                      }
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 pt-2">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setShowResultModal(false);
+                    if (uploadedImage) {
+                      URL.revokeObjectURL(uploadedImage);
+                      setUploadedImage(null);
+                    }
+                  }}
+                >
+                  Close
+                </Button>
+                <Button 
+                  className="bg-blue-500 hover:bg-blue-600 text-white"
+                  onClick={handleImageUploadClick}
+                >
+                  Analyze Another Image
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>
@@ -637,6 +728,7 @@ const OrganizationDashboard = () => {
                         <p className="text-sm text-gray-600">Select a model to analyze medical images</p>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {/* Cancer Detection */}
                         <button
                           className="w-full aspect-[3/2] bg-gradient-to-br from-blue-500 to-blue-400 hover:from-blue-600 hover:to-blue-500 border-2 border-blue-300 rounded-lg transition-all duration-200 flex flex-col items-center justify-center p-4 text-center space-y-3 group shadow-md hover:shadow-lg"
                           onClick={handleImageUploadClick}
@@ -660,6 +752,64 @@ const OrganizationDashboard = () => {
                               <div className="space-y-2">
                                 <h3 className="text-lg font-medium text-white">Cancer Detection</h3>
                                 <p className="text-base text-white/90">Analyze medical images</p>
+                              </div>
+                            </>
+                          )}
+                        </button>
+
+                        {/* Chest X-Ray */}
+                        <button
+                          className="w-full aspect-[3/2] bg-gradient-to-br from-green-500 to-green-400 hover:from-green-600 hover:to-green-500 border-2 border-green-300 rounded-lg transition-all duration-200 flex flex-col items-center justify-center p-4 text-center space-y-3 group shadow-md hover:shadow-lg"
+                          onClick={handleChestXRayUploadClick}
+                          disabled={isChestXRayUploading}
+                        >
+                          {isChestXRayUploading ? (
+                            <>
+                              <div className="p-3 bg-white/20 rounded-full group-hover:bg-white/30 transition-colors duration-200">
+                                <Loader2 className="h-6 w-6 text-white animate-spin" />
+                              </div>
+                              <div className="space-y-2">
+                                <h3 className="text-lg font-medium text-white">Processing...</h3>
+                                <p className="text-base text-white/90">Please wait</p>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="p-3 bg-white/20 rounded-full group-hover:bg-white/30 transition-colors duration-200">
+                                <Stethoscope className="h-6 w-6 text-white" />
+                              </div>
+                              <div className="space-y-2">
+                                <h3 className="text-lg font-medium text-white">Chest X-Ray Analysis</h3>
+                                <p className="text-base text-white/90">Analyze chest X-ray images</p>
+                              </div>
+                            </>
+                          )}
+                        </button>
+
+                        {/* Dermatology */}
+                        <button
+                          className="w-full aspect-[3/2] bg-gradient-to-br from-purple-500 to-purple-400 hover:from-purple-600 hover:to-purple-500 border-2 border-purple-300 rounded-lg transition-all duration-200 flex flex-col items-center justify-center p-4 text-center space-y-3 group shadow-md hover:shadow-lg"
+                          onClick={handleDermUploadClick}
+                          disabled={isDermUploading}
+                        >
+                          {isDermUploading ? (
+                            <>
+                              <div className="p-3 bg-white/20 rounded-full group-hover:bg-white/30 transition-colors duration-200">
+                                <Loader2 className="h-6 w-6 text-white animate-spin" />
+                              </div>
+                              <div className="space-y-2">
+                                <h3 className="text-lg font-medium text-white">Processing...</h3>
+                                <p className="text-base text-white/90">Please wait</p>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="p-3 bg-white/20 rounded-full group-hover:bg-white/30 transition-colors duration-200">
+                                <ActivityIcon className="h-6 w-6 text-white" />
+                              </div>
+                              <div className="space-y-2">
+                                <h3 className="text-lg font-medium text-white">Dermatology Analysis</h3>
+                                <p className="text-base text-white/90">Analyze skin conditions</p>
                               </div>
                             </>
                           )}
@@ -720,6 +870,170 @@ const OrganizationDashboard = () => {
             
             {/* Error Modal */}
             {ErrorModal}
+
+            {/* Chest X-Ray Modal */}
+            <Dialog open={showChestXRayModal} onOpenChange={setShowChestXRayModal}>
+              <DialogContent className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-2xl">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Left Column - Image */}
+                  <div className="space-y-6">
+                    {chestXRayImage && (
+                      <div className="relative aspect-square rounded-xl overflow-hidden border-2 border-gray-200">
+                        <img 
+                          src={chestXRayImage} 
+                          alt="Chest X-Ray" 
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                          <div className="text-white">
+                            <h3 className="text-lg font-semibold">Chest X-Ray Image</h3>
+                            <p className="text-sm opacity-90">AI-powered analysis completed</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Column - Details */}
+                  <div className="space-y-6">
+                    <DialogHeader className="text-left">
+                      <DialogTitle className="text-xl">Chest X-Ray Analysis</DialogTitle>
+                      <DialogDescription className="text-gray-600">
+                        Detailed findings from our chest X-ray analysis model
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base font-semibold">Analysis Status</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <span className="font-medium text-green-600">Analysis Complete</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base font-semibold">Next Steps</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-gray-700">
+                            The analysis is complete. Please consult with a healthcare professional for a comprehensive evaluation of the results.
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-2">
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          setShowChestXRayModal(false);
+                          if (chestXRayImage) {
+                            URL.revokeObjectURL(chestXRayImage);
+                            setChestXRayImage(null);
+                          }
+                        }}
+                      >
+                        Close
+                      </Button>
+                      <Button 
+                        className="bg-blue-500 hover:bg-blue-600 text-white"
+                        onClick={handleChestXRayUploadClick}
+                      >
+                        Analyze Another Image
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Dermatology Modal */}
+            <Dialog open={showDermModal} onOpenChange={setShowDermModal}>
+              <DialogContent className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-2xl">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Left Column - Image */}
+                  <div className="space-y-6">
+                    {dermImage && (
+                      <div className="relative aspect-square rounded-xl overflow-hidden border-2 border-gray-200">
+                        <img 
+                          src={dermImage} 
+                          alt="Skin Condition" 
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                          <div className="text-white">
+                            <h3 className="text-lg font-semibold">Skin Condition Image</h3>
+                            <p className="text-sm opacity-90">AI-powered analysis completed</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Column - Details */}
+                  <div className="space-y-6">
+                    <DialogHeader className="text-left">
+                      <DialogTitle className="text-xl">Dermatology Analysis</DialogTitle>
+                      <DialogDescription className="text-gray-600">
+                        Detailed findings from our dermatology analysis model
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base font-semibold">Analysis Status</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <span className="font-medium text-green-600">Analysis Complete</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base font-semibold">Next Steps</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-gray-700">
+                            The analysis is complete. Please consult with a dermatologist for a comprehensive evaluation of the results.
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-2">
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          setShowDermModal(false);
+                          if (dermImage) {
+                            URL.revokeObjectURL(dermImage);
+                            setDermImage(null);
+                          }
+                        }}
+                      >
+                        Close
+                      </Button>
+                      <Button 
+                        className="bg-blue-500 hover:bg-blue-600 text-white"
+                        onClick={handleDermUploadClick}
+                      >
+                        Analyze Another Image
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </main>
       )}
