@@ -22,6 +22,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
+ADMIN_ENABLED = os.getenv("ADMIN_ENABLED", "False") == "True"
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -69,6 +72,11 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # Add this
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://health-bridge-mtzy.onrender.com",
+]
+ 
 
 CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins (for testing)
 

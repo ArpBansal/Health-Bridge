@@ -29,7 +29,6 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     
     # Your existing URLs
-    path('admin/', admin.site.urls),
     path('auth/', include('users.urls')),
     path('ai/', include('chat.urls')),
     path('healthcare/', include('healthform.urls')),
@@ -37,6 +36,9 @@ urlpatterns = [
     path('diagnosing/', include('organisation.urls')),
     path('ckeditor/', include('ckeditor_uploader.urls')),
 ] 
+
+if getattr(settings, "ADMIN_ENABLED", False):  # Check if admin is enabled
+    urlpatterns.append(path("secure-admin-panel/", admin.site.urls))  
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
