@@ -22,7 +22,10 @@ import {
   Database,
   Cpu,
   LineChart,
-  Loader2
+  Loader2,
+  AlertTriangle,
+  CheckCircle,
+  XCircle
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -53,7 +56,7 @@ const CANCER_TYPES = [
   { id: "prostate", label: "Prostate Cancer" }
 ] as const;
 
-const API_ENDPOINT = "https://health-bridge-mtzy.onrender.com/diagnosing/diagnose-image/";
+const API_ENDPOINT = "https://health-bridge-mtzy.onrender.com/diagnosing/diagnose/";
 
 const OrganizationDashboard = () => {
   const { t } = useLanguage();
@@ -64,6 +67,7 @@ const OrganizationDashboard = () => {
   const [showCancerModal, setShowCancerModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [diagnosisResult, setDiagnosisResult] = useState(null);
+  const [uploadedImage, setUploadedImage] = useState(null);
   const [showResultModal, setShowResultModal] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [serverStatus, setServerStatus] = useState<"checking" | "online" | "offline">("checking");
@@ -304,6 +308,10 @@ const OrganizationDashboard = () => {
 
           // Create FormData for each file and send request
           const file = files[0]; // Process first file for simplicity
+          
+          // Store the file for preview in result modal
+          setUploadedImage(URL.createObjectURL(file));
+          
           const formData = new FormData();
           formData.append('image', file);
           
@@ -354,11 +362,9 @@ const OrganizationDashboard = () => {
           const result = JSON.parse(text);
           console.log("Result:", result);
           
-          if (result && result.message) {
-            setDiagnosisResult({
-              status: "success",
-              message: result.message
-            });
+          // Handle the new API response format
+          if (result && result.result && typeof result.result === 'object') {
+            setDiagnosisResult(result.result);
             setShowResultModal(true);
           } else if (result && result.error) {
             throw new Error(result.error);
@@ -379,7 +385,7 @@ const OrganizationDashboard = () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.jpg,.jpeg,.png,.webp,.tiff,.tif';
-    input.multiple = true;
+    input.multiple = false; // Changed to only allow one file
     input.addEventListener('change', handleFileUpload);
     input.click();
   }, [handleFileUpload]);
@@ -387,71 +393,150 @@ const OrganizationDashboard = () => {
   const ResultModal = useMemo(() => {
     if (!diagnosisResult) return null;
     
-    // Handle various possible result formats
-    const renderResultContent = () => {
-      if (typeof diagnosisResult === 'object') {
-        if (diagnosisResult.status === "success") {
-          return (
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-700">Status:</span>
-                <span className="font-medium text-green-500">Success</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-700">Message:</span>
-                <span className="font-medium">{diagnosisResult.message}</span>
-              </div>
-            </div>
-          );
-        }
-        return (
-          <div className="space-y-2">
-            {Object.entries(diagnosisResult).map(([key, value]) => (
-              <div key={key} className="flex justify-between">
-                <span className="text-gray-700">{key}:</span>
-                <span className="font-medium">
-                  {typeof value === 'number' 
-                    ? `${(value as number * 100).toFixed(2)}%` 
-                    : value as string}
-                </span>
-              </div>
-            ))}
-          </div>
-        );
-      } else if (typeof diagnosisResult === 'string') {
-        return <p className="text-gray-700">{diagnosisResult}</p>;
-      } else {
-        return <p className="text-gray-700">Received diagnosis result in unknown format</p>;
-      }
-    };
+    // Get prediction and confidence from the new result format
+    const { prediction, confidence } = diagnosisResult;
+    const confidencePercentage = (confidence * 100).toFixed(2);
+    const isPredictionPositive = prediction === "positive";
     
     return (
       <Dialog open={showResultModal} onOpenChange={setShowResultModal}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Diagnosis Results</DialogTitle>
+            <DialogTitle>Cancer Detection Results</DialogTitle>
             <DialogDescription>
               Analysis results from the cancer detection model
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-medium text-lg mb-2">Detection Results</h3>
-              {renderResultContent()}
+          <div className="space-y-6 mt-4">
+            {/* Image preview */}
+            {uploadedImage && (
+              <div className="flex justify-center">
+                <div className="relative w-64 h-64 rounded-lg overflow-hidden border-2 border-gray-200">
+                  <img 
+                    src={uploadedImage} 
+                    alt="Analyzed image" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+            )}
+            
+            {/* Primary result card */}
+            <Card className={`hover:shadow-md transition-all duration-300 border-l-4 ${
+              isPredictionPositive ? 'border-l-red-500' : 'border-l-green-500'
+            }`}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className={`p-3 rounded-full ${
+                      isPredictionPositive ? 'bg-red-50' : 'bg-green-50'
+                    }`}>
+                      {isPredictionPositive ? (
+                        <AlertTriangle className="h-8 w-8 text-red-500" />
+                      ) : (
+                        <CheckCircle className="h-8 w-8 text-green-500" />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold">
+                        {isPredictionPositive ? 'Positive Indicators Detected' : 'No Indicators Detected'}
+                      </h3>
+                      <p className="text-gray-600">
+                        {isPredictionPositive 
+                          ? 'The model detected indicators that require further analysis'
+                          : 'No concerning indicators were found in the image'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Detailed results */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="hover:shadow-md transition-all duration-300">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Prediction</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2">
+                    {isPredictionPositive ? (
+                      <XCircle className="h-5 w-5 text-red-500" />
+                    ) : (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    )}
+                    <span className={`font-medium text-lg ${
+                      isPredictionPositive ? 'text-red-600' : 'text-green-600'
+                    }`}>
+                      {prediction.charAt(0).toUpperCase() + prediction.slice(1)}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="hover:shadow-md transition-all duration-300">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Confidence</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-lg">{confidencePercentage}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div 
+                        className={`h-2.5 rounded-full ${
+                          isPredictionPositive ? 'bg-red-500' : 'bg-green-500'
+                        }`}
+                        style={{ width: `${confidencePercentage}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-            <div className="flex justify-end">
+            
+            {/* Recommendations */}
+            <Card className="hover:shadow-md transition-all duration-300">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Recommendations</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700">
+                  {isPredictionPositive
+                    ? 'Based on our analysis, we recommend consulting with a healthcare professional for a comprehensive evaluation.'
+                    : 'No concerning indicators were detected. Continue with regular check-ups as recommended by your healthcare provider.'
+                  }
+                </p>
+              </CardContent>
+            </Card>
+            
+            <div className="flex justify-end gap-3">
               <Button 
-                className="bg-blue-500 hover:bg-blue-600 text-white"
-                onClick={() => setShowResultModal(false)}
+                variant="outline"
+                onClick={() => {
+                  setShowResultModal(false);
+                  if (uploadedImage) {
+                    URL.revokeObjectURL(uploadedImage);
+                    setUploadedImage(null);
+                  }
+                }}
               >
                 Close
+              </Button>
+              <Button 
+                className="bg-blue-500 hover:bg-blue-600 text-white"
+                onClick={handleImageUploadClick}
+              >
+                Analyze Another Image
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
     );
-  }, [diagnosisResult, showResultModal]);
+  }, [diagnosisResult, showResultModal, uploadedImage, handleImageUploadClick]);
 
   const ErrorModal = useMemo(() => {
     if (!uploadError) return null;
