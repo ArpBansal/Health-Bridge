@@ -1,0 +1,4 @@
+torch==2.7.0
+monai==1.4.0
+fastapi[all]
+huggingface-hub==0.30.2

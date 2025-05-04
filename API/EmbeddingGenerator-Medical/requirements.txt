@@ -1,0 +1,5 @@
+tf-nightly[and-cuda]
+python-dotenv
+pillow
+huggingface-hub
+fastapi[all]
