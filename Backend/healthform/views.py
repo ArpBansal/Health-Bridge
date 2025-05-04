@@ -71,8 +71,8 @@ class GeneralHealthFormUpdateView(generics.UpdateAPIView):
             # Handle unexpected errors properly
             from rest_framework.exceptions import APIException
             raise APIException(f"Unexpected error: {str(e)}")
-
-
+        
+        
 class GenerateHealthSummaryView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -128,35 +128,6 @@ class GenerateHealthSummaryView(APIView):
             spaceBefore=6
         ))
         
-        # AI section heading style
-        styles.add(ParagraphStyle(
-            name='BridgeAIHeading', 
-            parent=styles['Heading1'],
-            fontSize=18,
-            textColor=colors.darkblue,
-            borderWidth=0,
-            spaceBefore=6,
-            spaceAfter=12
-        ))
-        
-        # AI paragraph style for clean, easy-to-read text
-        styles.add(ParagraphStyle(
-            name='BridgeAIParagraph', 
-            parent=styles['Normal'],
-            fontSize=11,
-            leading=16,
-            leftIndent=12,
-            rightIndent=12,
-            textColor=colors.black,
-            backgroundColor=colors.whitesmoke,
-            borderPadding=10,
-            borderWidth=1,
-            borderColor=colors.lightgrey,
-            borderRadius=5,
-            spaceBefore=6,
-            spaceAfter=10
-        ))
-        
         # Style for general text
         styles.add(ParagraphStyle(
             name='BridgeNormal', 
@@ -165,34 +136,6 @@ class GenerateHealthSummaryView(APIView):
             leading=14,
             spaceBefore=2,
             spaceAfter=6
-        ))
-        
-        # Style for AI recommendation boxes
-        styles.add(ParagraphStyle(
-            name='BridgeRecommendation', 
-            parent=styles['Normal'],
-            fontSize=11,
-            leading=16,
-            leftIndent=15,
-            rightIndent=15,
-            textColor=colors.darkblue,
-            backgroundColor=colors.lightcyan,
-            borderPadding=12,
-            borderWidth=1,
-            borderColor=colors.lightblue,
-            borderRadius=6,
-            spaceBefore=8,
-            spaceAfter=8
-        ))
-        
-        # Style for subheadings in AI section
-        styles.add(ParagraphStyle(
-            name='BridgeSubheading',
-            parent=styles['Heading2'],
-            fontSize=14,
-            textColor=colors.darkblue,
-            spaceBefore=10,
-            spaceAfter=8
         ))
         
         # Style for disclaimer text
@@ -210,11 +153,7 @@ class GenerateHealthSummaryView(APIView):
         # Assign styles to variables
         title_style = styles['BridgeTitle']
         heading_style = styles['BridgeHeading']
-        ai_heading_style = styles['BridgeAIHeading']
         normal_style = styles['BridgeNormal']
-        ai_paragraph_style = styles['BridgeAIParagraph']
-        subheading_style = styles['BridgeSubheading']
-        recommendation_style = styles['BridgeRecommendation']
         disclaimer_style = styles['BridgeDisclaimer']
         
         # Create a header with gradient background
@@ -450,80 +389,10 @@ class GenerateHealthSummaryView(APIView):
             ('ROWBACKGROUNDS', (0, 0), (-1, -1), [colors.whitesmoke, colors.white]),
         ]))
         elements.append(emergency_table)
+        elements.append(Spacer(1, 20))
         
-        # Add page break before AI section
-        elements.append(PageBreak())
-        
-        # AI Health Analysis Section - Completely redesigned for better user experience
-        # Create a full-width colored header for AI section
-        elements.append(Paragraph("HealthBridge AI Analysis", ai_heading_style))
-        
-        # Add an explanatory note with improved styling
-        ai_explanation = Paragraph(
-            "Your personalized health insights based on the information you've provided. "
-            "This analysis offers tailored recommendations to help you make informed decisions about your health journey.",
-            normal_style
-        )
-        elements.append(ai_explanation)
-        elements.append(Spacer(1, 15))
-        
-        # Generate AI response
-        prompt = generate_health_prompt(data)
-        ai_response = generate_gemini_response(prompt)
-        
-        # Process AI response with improved formatting
-        # Split response into logical sections
-        sections = re.split(r'(?=#+\s|\*\*[^*]+\*\*:|^[A-Z][A-Z\s]+:)', ai_response)
-        
-        for section in sections:
-            if not section.strip():
-                continue
-                
-            # Try to extract heading and content
-            heading_match = re.match(r'(#+\s.+|\*\*[^*]+\*\*:|^[A-Z][A-Z\s]+:)(.*)', section.strip(), re.DOTALL)
-            
-            if heading_match:
-                heading, content = heading_match.groups()
-                
-                # Clean up heading
-                heading = re.sub(r'#+\s|\*\*|\*|:', '', heading).strip()
-                
-                # Add section heading with improved styling
-                elements.append(Paragraph(heading, subheading_style))
-                
-                # Process content into well-formatted paragraphs
-                paragraphs = content.strip().split("\n")
-                for para in paragraphs:
-                    if para.strip():
-                        elements.append(Paragraph(para.strip(), ai_paragraph_style))
-            else:
-                # Just add the content if no heading is detected
-                paragraphs = section.strip().split("\n")
-                for para in paragraphs:
-                    if para.strip():
-                        elements.append(Paragraph(para.strip(), ai_paragraph_style))
-            
-            elements.append(Spacer(1, 10))
-        
-        # Extract key recommendations using pattern matching
-        recommendations = re.findall(r'(?:recommend|suggest|advise)[^.!?]*[.!?]', ai_response, re.IGNORECASE)
-        
-        if recommendations:
-            elements.append(Spacer(1, 20))
-            
-            # Add a visually distinct recommendations section
-            rec_title = Paragraph("Key Recommendations", subheading_style)
-            elements.append(rec_title)
-            elements.append(Spacer(1, 10))
-            
-            # Create an attractive box for recommendations
-            for i, rec in enumerate(recommendations[:3]):  # Limit to 3 key recommendations
-                rec_clean = rec.strip()
-                elements.append(Paragraph(f"• {rec_clean}", recommendation_style))
-        
-        # Add a clear disclaimer after AI response
-        elements.append(Spacer(1, 25))
-        disclaimer_text = """DISCLAIMER: This health summary is generated based on self-reported information and is not a substitute for professional medical advice, diagnosis, or treatment. The AI analysis is for informational purposes only. Always consult with your healthcare provider regarding any medical concerns."""
+        # Add a disclaimer
+        disclaimer_text = """DISCLAIMER: This health summary contains your self-reported information. Please review for accuracy and share with your healthcare provider as needed."""
         elements.append(Paragraph(disclaimer_text, disclaimer_style))
         
         # Build the PDF with consistent header and footer
