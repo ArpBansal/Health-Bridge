@@ -35,5 +35,3 @@ async def classify_data(data: InputData):
         return {"prediction": prediction, "confidence": confidence}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error during classification: {str(e)}")
-    
-    # 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
