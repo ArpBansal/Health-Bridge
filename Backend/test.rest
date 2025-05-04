@@ -1,0 +1,297 @@
+POST http://127.0.0.1:8000/auth/register/
+Content-Type: application/json
+
+{
+    "username": "user1",
+    "email": "5z97pgwnck@wyoxafp.com",
+    "role": "organisation",
+    "password": "ayush@1234",
+    "confirm_password": "ayush@1234"
+}
+
+###
+
+POST http://127.0.0.1:8000/auth/verify-otp/
+Content-Type: application/json
+
+{
+    "email": "5z97pgwnck@wyoxafp.com",
+    "otp": "924110"
+}
+
+
+###
+
+POST http://127.0.0.1:8000/auth/resend-otp/
+Content-Type: application/json
+
+{
+    "email": "h40gr@qejjyl.com"
+}
+
+
+###
+
+POST http://127.0.0.1:8000/auth/login/
+Content-Type: application/json
+
+{
+    "username": "user1",
+    "password": "ayush@1234"
+}
+
+###
+
+
+POST http://127.0.0.1:8000/auth/refresh/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0ODAyNjA2LCJpYXQiOjE3NDQ3MTYyMDYsImp0aSI6Ijg3ZmI5MmIzMDU5NjRhY2I5YzhmY2E1N2E2MzIwZDUyIiwidXNlcl9pZCI6MX0.mHv-dbCUPMe_tDzAe3wMDZA1SDi3WrQinAmDkpx3FlE
+
+{
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0NTMyMTAwNiwiaWF0IjoxNzQ0NzE2MjA2LCJqdGkiOiI5NWYzZmIxN2MzN2M0NTg2YmY4YWM4MzE1ZTBhNDhhZSIsInVzZXJfaWQiOjF9.7TkZG-BFAq2kDrbZCsBWyLAjoudlm8Agsa05tLddpWw"
+}
+
+
+###
+
+
+POST http://127.0.0.1:8000/auth/logout/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0ODAyNzkxLCJpYXQiOjE3NDQ3MTYzOTEsImp0aSI6ImE4NzkzZDViNjc3YjQzODA4OWI0MTcxY2Y3YWE3ZDA0IiwidXNlcl9pZCI6MX0.kL7pKZeILo5riZAu11uPjkySD6iaWhly2pvXsrvWCig
+
+{
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0NTMyMTE5MSwiaWF0IjoxNzQ0NzE2MzkxLCJqdGkiOiI1MTc0YTEwMTkxMWY0ZGZhOTAwNGJmNjVmM2RkOTQ2YSIsInVzZXJfaWQiOjF9.nTS6CPaHanj2uZMWn4H9_3YK5S78DWUzXEaAKzhQSVQ"
+}
+
+
+###
+
+# Forgot Password - Send OTP
+POST http://localhost:8000/auth/forgot-password/
+Content-Type: application/json
+
+{
+  "email": "bdg6dqfhri@dygovil.com"
+}
+
+###
+
+# Verify OTP (You will need to manually replace the OTP here or mock it)
+POST http://localhost:8000/auth/verify-forgot-otp/
+Content-Type: application/json
+
+{
+  "email": "bdg6dqfhri@dygovil.com",
+  "otp": "149880"
+}
+
+###
+
+# Reset Password
+POST http://localhost:8000/auth/reset-password/
+Content-Type: application/json
+
+{
+  "email": "bdg6dqfhri@dygovil.com",
+  "new_password": "ayush@123",
+  "confirm_password": "ayush@123"
+}
+
+###
+
+
+GET http://localhost:8000/auth/user/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ2NDAwMDI5LCJpYXQiOjE3NDYzMTM2MjksImp0aSI6IjQ0ZWRmOTJhOWU3ZTRhMjNhM2RkYzhjYmM5NmVjMDUxIiwidXNlcl9pZCI6OX0.YLSYYJXSTztHDKDoMkjPEgHsYVL9bqcNJkfbESaRSt8
+
+###
+
+GET http://127.0.0.1:8000/ai/chats/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ2MTAzMTYwLCJpYXQiOjE3NDYwMTY3NjAsImp0aSI6IjZlNTViNjMzMWM1NDQzNjViMjk1MGM3NGYyM2UyMzBmIiwidXNlcl9pZCI6OX0.JCeJkqac6lMLfAKkY4y5A8YC8TJE5BwpDxq9Gsua8eg
+
+
+###
+
+
+POST http://127.0.0.1:8000/ai/chats/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ2MTIyMTk3LCJpYXQiOjE3NDYwMzU3OTcsImp0aSI6IjNjN2FmMjNiYWZjYTRiNTg5M2VlOTNiNGY5ZjYzNWU4IiwidXNlcl9pZCI6OX0.ZyKVdDv-uJGBINMBAD6OacbYW7F1_NJMTG5rRXdB9Gg
+
+
+###
+
+
+POST http://127.0.0.1:8000/ai/chat/2d9d21b7-eaf7-45f1-976b-ade7c7f80a99/messages/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ2MTAzMTYwLCJpYXQiOjE3NDYwMTY3NjAsImp0aSI6IjZlNTViNjMzMWM1NDQzNjViMjk1MGM3NGYyM2UyMzBmIiwidXNlcl9pZCI6OX0.JCeJkqac6lMLfAKkY4y5A8YC8TJE5BwpDxq9Gsua8eg
+
+{
+    "content": "Hey Hi! This is a msg"
+}
+
+###
+
+
+GET http://127.0.0.1:8000/ai/chat/2d9d21b7-eaf7-45f1-976b-ade7c7f80a99/messages/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ2MTAzMTYwLCJpYXQiOjE3NDYwMTY3NjAsImp0aSI6IjZlNTViNjMzMWM1NDQzNjViMjk1MGM3NGYyM2UyMzBmIiwidXNlcl9pZCI6OX0.JCeJkqac6lMLfAKkY4y5A8YC8TJE5BwpDxq9Gsua8eg
+
+
+###
+
+
+GET http://127.0.0.1:8000/healthcare/form/list/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0ODg5Nzc4LCJpYXQiOjE3NDQ4MDMzNzgsImp0aSI6ImNmYmViYTgwOWZlODQyYmVhODg4NDNjMjg1NDk4YTVhIiwidXNlcl9pZCI6MX0.4iYGCiZ20FnFP5SQuoZbMeExnLFAMMfgswKvCv4cs3U
+
+
+###
+
+POST http://127.0.0.1:8000/healthcare/form/submit/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0OTcxMDExLCJpYXQiOjE3NDQ4ODQ2MTEsImp0aSI6IjQ5ZDA4NDZmOTc0ZTRkODc5OWIyN2YzZGY5Yjg2ZmRkIiwidXNlcl9pZCI6NX0.JqZb4JwGVB_AHjRTQKUxb-H0_nrlkP_8ILajYNrQqjw
+
+ {
+    "name": "Ayush Singh Tomar",
+    "age": 21,
+    "gender": "Male",
+    "state": "Delhi",
+    "contact_details": "9873443240",
+    "chronic_conditions": "Arthritis, High Cholesterol",
+    "past_surgeries": "Hip Replacement",
+    "allergies": "Penicillin",
+    "medications": "Atorvastatin, Ibuprofen",
+    "symptoms": "Joint pain and stiffness",
+    "symptom_severity": "Moderate",
+    "symptom_duration": "Chronic",
+    "mental_health_stress": true,
+    "mental_health_anxiety": true,
+    "mental_health_depression": false,
+    "vaccination_history": "Covid-19, Pneumonia",
+    "accessibility_needs": "Hearing aid support",
+    "pregnancy_status": "Not Applicable",
+    "emergency_contact": {
+      "name": "Emma Green",
+      "relationship": "Daughter",
+      "number": "4376543241"
+    },
+    "health_insurance_provider": "WellCare",
+    "health_insurance_policy": "MN123456",
+    "preferred_language": "English",
+    "research_participation": true
+  }
+###
+
+GET http://127.0.0.1:8000/healthcare/form/me/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0ODg5Nzc4LCJpYXQiOjE3NDQ4MDMzNzgsImp0aSI6ImNmYmViYTgwOWZlODQyYmVhODg4NDNjMjg1NDk4YTVhIiwidXNlcl9pZCI6MX0.4iYGCiZ20FnFP5SQuoZbMeExnLFAMMfgswKvCv4cs3U
+
+###
+
+
+GET http://127.0.0.1:8000/healthcare/generate-pdf/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0OTc1ODMwLCJpYXQiOjE3NDQ4ODk0MzAsImp0aSI6ImIyZWY2MmU5ZWI3YTQ0ZGE5ZTkwNDUxMmM5NzA2ZDM1IiwidXNlcl9pZCI6M30.2hIrZETn4H_Mzry5csjJ9nnXanAAaj_hhOUXaFhtI8k
+
+###
+
+PATCH http://127.0.0.1:8000/healthcare/form/me/update/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0ODg5Nzc4LCJpYXQiOjE3NDQ4MDMzNzgsImp0aSI6ImNmYmViYTgwOWZlODQyYmVhODg4NDNjMjg1NDk4YTVhIiwidXNlcl9pZCI6MX0.4iYGCiZ20FnFP5SQuoZbMeExnLFAMMfgswKvCv4cs3U
+
+{
+    "name":"TestUser"
+}
+
+###
+
+GET http://127.0.0.1:8000/blogs/posts/
+Content-Type: application/json
+
+###
+
+GET http://127.0.0.1:8000/blogs/posts/ai-detection-prevention-underserved-communities/
+Content-Type: application/json
+
+###
+
+POST http://127.0.0.1:8000/blogs/posts/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ2MDk4Njc1LCJpYXQiOjE3NDYwMTIyNzUsImp0aSI6ImViMWVjOTE2NmNjYzQ1OWZhZDk1NmViN2RjMzE2MzcwIiwidXNlcl9pZCI6OX0.c7QjBnSxV1sN47ToSqrdt8cKrVh2H6DMhMvlbbk5Urw
+
+{
+    "title": "First Blog Post by Admin",
+    "content": "This is my first blog post. I am excited to share it with you"
+}
+
+###
+
+
+DELETE http://127.0.0.1:8000/blogs/posts/ai-detection-prevention-underserved-communities/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0ODg5Nzc4LCJpYXQiOjE3NDQ4MDMzNzgsImp0aSI6ImNmYmViYTgwOWZlODQyYmVhODg4NDNjMjg1NDk4YTVhIiwidXNlcl9pZCI6MX0.4iYGCiZ20FnFP5SQuoZbMeExnLFAMMfgswKvCv4cs3U
+
+
+###
+
+GET http://127.0.0.1:8000/blogs/posts/1/comments/
+
+
+###
+
+
+POST http://127.0.0.1:8000/blogs/posts/1/comments/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0OTUzNzUyLCJpYXQiOjE3NDQ4NjczNTIsImp0aSI6IjE0YTgwZWE1NTQ0YTRjNTBhZDZhMGIzMmY5MzEyZDJjIiwidXNlcl9pZCI6MX0.rViZtansZmx7Gj69noQkKZUWBylImyO7c0OONhW259Q
+Content-Type: application/json
+
+{
+    "content": "Comment by testuser on post 1!"
+}
+
+
+
+### 
+
+
+PUT http://127.0.0.1:8000/blogs/posts/1/comments/1/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0OTUzNzUyLCJpYXQiOjE3NDQ4NjczNTIsImp0aSI6IjE0YTgwZWE1NTQ0YTRjNTBhZDZhMGIzMmY5MzEyZDJjIiwidXNlcl9pZCI6MX0.rViZtansZmx7Gj69noQkKZUWBylImyO7c0OONhW259Q
+Content-Type: application/json
+
+{
+    "content": "Updated comment by user2 on post1"
+}
+
+
+###
+
+
+PATCH http://127.0.0.1:8000/blogs/posts/1/comments/1/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0OTUzNzUyLCJpYXQiOjE3NDQ4NjczNTIsImp0aSI6IjE0YTgwZWE1NTQ0YTRjNTBhZDZhMGIzMmY5MzEyZDJjIiwidXNlcl9pZCI6MX0.rViZtansZmx7Gj69noQkKZUWBylImyO7c0OONhW259Q
+Content-Type: application/json
+
+{
+    "content": "Updated comment by testuser on post1"
+}
+
+
+###
+
+DELETE http://127.0.0.1:8000/blogs/posts/1/comments/1/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0OTUzNzUyLCJpYXQiOjE3NDQ4NjczNTIsImp0aSI6IjE0YTgwZWE1NTQ0YTRjNTBhZDZhMGIzMmY5MzEyZDJjIiwidXNlcl9pZCI6MX0.rViZtansZmx7Gj69noQkKZUWBylImyO7c0OONhW259Q
+
+
+###
+
+
+
+POST http://127.0.0.1:8000/diagnosing/diagnose-image/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ2Mzc4Mzg0LCJpYXQiOjE3NDYyOTE5ODQsImp0aSI6IjgwMTM5MTA4NGEzYjQ0ZjI4YTlhZjEwYzI1YmZlNjc2IiwidXNlcl9pZCI6M30.vwvcCdGDBXJ-ZtYSAhOI6t0pS3bcDnXA6h-pZVtobqA
+Content-Type: multipart/form-data
+
+
+image=@image.jpg;type=image/jpeg
+
+
+###
+
