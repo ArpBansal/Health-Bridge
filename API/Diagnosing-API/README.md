@@ -1,3 +1,7 @@
+This repo contains code fom huggingface space https://huggingface.co/spaces/Arpit-Bansal/Diagnosing-API/tree/main
+
+It's deployed on HF-space.
+
 ---
 title: Diagnosing API
 emoji: ⚡
