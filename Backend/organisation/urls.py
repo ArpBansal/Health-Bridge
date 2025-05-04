@@ -1,6 +1,6 @@
-from django.urls import path, include
-from organisation import views
+from django.urls import path
+from organisation.views import DiagnoseImageAndGetResultView
 
 urlpatterns = [
-    path('diagnose-image/', views.DiagnosingImageView.as_view(), name='diagnose-image')
+    path('diagnose/', DiagnoseImageAndGetResultView.as_view(), name='diagnose'),
 ]

@@ -1,19 +1,20 @@
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
-from rest_framework import generics, permissions, status
+from rest_framework import generics, status, permissions
 from organisation.models import DiagnosingImage
 from organisation.serializers import DiagnosingImageSerializer
 from drf_yasg.utils import swagger_auto_schema
 import requests
-from organisation.permissions import IsOrganisation
 import mimetypes
 
-API_URL = "https://arpit-bansal-EmbeddingGenerator-Medical.hf.space/embeddings"
+EMBEDDING_API_URL = "https://arpit-bansal-EmbeddingGenerator-Medical.hf.space/embeddings"
+RESULT_API_URL = "https://arpit-bansal-Diagnosing-API.hf.space/classify"
 
-class DiagnosingImageView(generics.CreateAPIView):
+
+class DiagnoseImageAndGetResultView(generics.CreateAPIView):
     queryset = DiagnosingImage.objects.all()
     serializer_class = DiagnosingImageSerializer
-    permission_classes = [IsOrganisation]
+    permission_classes = [permissions.AllowAny]
     parser_classes = [MultiPartParser, FormParser]
 
     @swagger_auto_schema(request_body=DiagnosingImageSerializer)
@@ -21,23 +22,40 @@ class DiagnosingImageView(generics.CreateAPIView):
         if 'image' not in request.FILES:
             return Response({'error': 'No image file uploaded.'}, status=400)
 
-        image_serializer = self.serializer_class(data=request.data)
-        if image_serializer.is_valid():
-            image_serializer.save()
-            image_path = image_serializer.instance.image.path
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            image_path = serializer.instance.image.path
 
             try:
+                # Step 1: Get embedding
                 with open(image_path, 'rb') as f:
                     mime_type, _ = mimetypes.guess_type(image_path)
                     files = {'file': (f.name, f, mime_type or 'application/octet-stream')}
-                    response = requests.post(API_URL, files=files)
+                    embedding_response = requests.post(EMBEDDING_API_URL, files=files)
+                    print(embedding_response)
 
-                if response.status_code == 200:
-                    return Response({'message': 'Image uploaded and sent to API successfully.'}, status=200)
-                else:
-                    return Response({'error': 'Failed to send image to API.', 'details': response.text}, status=response.status_code)
+                if embedding_response.status_code != 200:
+                    return Response({'error': 'Failed to get embedding.', 'details': embedding_response.text},
+                                    status=embedding_response.status_code)
+
+                embedding = embedding_response.json().get('embedding')
+                print(embedding)
+                if not embedding:
+                    return Response({'error': 'No embedding found in response from embedding API.'}, status=500)
+
+                # Step 2: Send to result API
+                result_payload = {"features": embedding}
+                result_response = requests.post(RESULT_API_URL, json=result_payload)
+
+                if result_response.status_code != 200:
+                    return Response({'error': 'Failed to get result from result API.', 'details': result_response.text},
+                                    status=result_response.status_code)
+
+                result = result_response.json()
+                return Response({'result': result}, status=200)
 
             except Exception as e:
-                return Response({'error': 'Exception during file upload or API call.', 'details': str(e)}, status=500)
+                return Response({'error': 'Internal server error.', 'details': str(e)}, status=500)
 
-        return Response(image_serializer.errors, status=400)
+        return Response(serializer.errors, status=400)
