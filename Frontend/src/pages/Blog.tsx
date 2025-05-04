@@ -271,7 +271,7 @@ const Blog = () => {
         </section>
         
         {/* Create Post Button (for authenticated users) */}
-        {user && (
+        {/* {user && (
           <div className="container px-4 mb-8">
             <Button 
               onClick={handleCreatePost}
@@ -281,7 +281,7 @@ const Blog = () => {
               Create New Post
             </Button>
           </div>
-        )}
+        )} */}
 
         {/* Error Message */}
         {error && (
