@@ -271,7 +271,8 @@ const ChatInterface: React.FC = () => {
             break;
             
           case 'typing_end':
-            setIsThinking(false);
+            // Don't immediately set isThinking to false
+            // Let it stay true until we get the full response
             break;
             
           case 'message':
@@ -287,11 +288,6 @@ const ChatInterface: React.FC = () => {
                   // Check if message already exists to prevent duplication
                   const messageExists = prevChat.messages?.some(m => m.id === id);
                   if (messageExists) return prevChat;
-                  
-                  // When user sends a message, set thinking state to true
-                  // until we receive the first chunk or typing_start signal
-                  setIsThinking(true);
-                  setIsStreaming(false);
                   
                   return {
                     ...prevChat,
@@ -310,7 +306,6 @@ const ChatInterface: React.FC = () => {
               else if (role === 'assistant') {
                 // When we receive an empty assistant message, it means response
                 // streaming is about to begin
-                setIsThinking(false);
                 setIsStreaming(true);
                 setStreamingMessageId(id);
                 
@@ -343,6 +338,7 @@ const ChatInterface: React.FC = () => {
                   
                   // We've received the complete message, streaming is done
                   setIsStreaming(false);
+                  setIsThinking(false); // Only stop thinking when we have the full response
                   setStreamingMessageId(null);
                 }
               }
@@ -352,8 +348,7 @@ const ChatInterface: React.FC = () => {
           case 'message_update':
             // Handle streaming updates to assistant responses
             if (data.message_id && data.content) {
-              // We're receiving streamed content, update thinking/streaming states
-              setIsThinking(false);
+              // We're receiving streamed content, update streaming state
               setIsStreaming(true);
               setStreamingMessageId(data.message_id);
               
@@ -383,6 +378,7 @@ const ChatInterface: React.FC = () => {
           case 'streaming_complete':
             // Handle the end of streaming
             setIsStreaming(false);
+            setIsThinking(false); // Only stop thinking when streaming is complete
             setStreamingMessageId(null);
             break;
             
@@ -447,8 +443,10 @@ const ChatInterface: React.FC = () => {
         content: messageContent 
       }));
       
-      // Immediately show thinking indicator
+      // Set thinking state when message is sent
       setIsThinking(true);
+      setIsStreaming(false);
+      setStreamingMessageId(null);
     } else {
       console.error('WebSocket is not connected');
       setConnectionError('Not connected to server');
@@ -506,6 +504,7 @@ const ChatInterface: React.FC = () => {
   // Create both message bubbles for a single message entry
   const renderMessageWithResponse = (msg: Message) => {
     const timestamp = msg.timestamp || new Date().toISOString();
+    const isCurrentMessage = msg.id === streamingMessageId;
     
     return (
       <div key={msg.id} className="space-y-4">
@@ -524,19 +523,28 @@ const ChatInterface: React.FC = () => {
         </div>
         
         {/* AI response (if exists) */}
-        {(msg.response || msg.id === streamingMessageId) && (
+        {(msg.response || (isCurrentMessage && isThinking)) && (
           <div className="flex justify-start">
             <div className="h-10 w-10 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white flex items-center justify-center flex-shrink-0 mr-3 shadow-md">
               <Bot size={18} />
             </div>
             <div className="max-w-[80%] rounded-2xl p-4 shadow-sm bg-white border border-slate-100">
-              <div className="prose prose-slate prose-sm max-w-none">
-                {/* Show cursor animation when streaming this specific message */}
-                <ReactMarkdown>{msg.response}</ReactMarkdown>
-                {msg.id === streamingMessageId && isStreaming && (
-                  <span className="animate-pulse">▋</span>
-                )}
-              </div>
+              {isThinking && isCurrentMessage ? (
+                <div className="flex items-center space-x-2">
+                  <span className="flex space-x-1">
+                    <span className="w-2 h-2 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0ms' }}></span>
+                    <span className="w-2 h-2 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '200ms' }}></span>
+                    <span className="w-2 h-2 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '400ms' }}></span>
+                  </span>
+                </div>
+              ) : (
+                <div className="prose prose-slate prose-sm max-w-none">
+                  <ReactMarkdown>{msg.response}</ReactMarkdown>
+                  {isCurrentMessage && isStreaming && (
+                    <span className="animate-pulse">▋</span>
+                  )}
+                </div>
+              )}
               <div className="text-xs mt-2 flex items-center justify-end text-slate-400">
                 <Clock size={12} className="mr-1" />
                 {formatTime(timestamp)}
@@ -548,7 +556,7 @@ const ChatInterface: React.FC = () => {
     );
   };
 
-  // Render a thinking indicator when waiting for AI response
+  // Add a separate thinking indicator for the current message
   const renderThinkingIndicator = () => {
     if (!isThinking) return null;
     
@@ -557,11 +565,13 @@ const ChatInterface: React.FC = () => {
         <div className="h-10 w-10 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white flex items-center justify-center flex-shrink-0 mr-3 shadow-md">
           <Bot size={18} />
         </div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm max-w-[80%]">
+        <div className="max-w-[80%] rounded-2xl p-4 shadow-sm bg-white border border-slate-100">
           <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 rounded-full bg-teal-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-            <div className="w-2 h-2 rounded-full bg-teal-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
-            <div className="w-2 h-2 rounded-full bg-teal-400 animate-bounce" style={{ animationDelay: '600ms' }}></div>
+            <span className="flex space-x-1">
+              <span className="w-2 h-2 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '0ms' }}></span>
+              <span className="w-2 h-2 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '200ms' }}></span>
+              <span className="w-2 h-2 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 animate-[bounce_1s_ease-in-out_infinite]" style={{ animationDelay: '400ms' }}></span>
+            </span>
           </div>
         </div>
       </div>
@@ -851,7 +861,6 @@ const ChatInterface: React.FC = () => {
                 {activeChat.messages?.length > 0 && (
                   <div className="space-y-6">
                     {activeChat.messages.map((msg) => renderMessageWithResponse(msg))}
-                    {/* Thinking animation */}
                     {renderThinkingIndicator()}
                     <div ref={messagesEndRef} />
                   </div>
